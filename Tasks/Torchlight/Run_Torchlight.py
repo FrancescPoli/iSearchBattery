@@ -12,8 +12,8 @@ import numpy as np
 import tobii_research as tr
 #import time
 #import win32api
-import win32con
-import pywintypes
+#import win32con
+#import pywintypes
 import os
 import csv
 
@@ -68,13 +68,12 @@ target_pos_pixels = [[[0,450],[-100,375]],
 
 ################################################################################
 
-devmode = pywintypes.DEVMODEType()
+screenx, screeny = 1920, 1080
+winsize=[screenx,screeny]
 
-screenx, screeny = 1920, 1080 
-devmode.PelsWidth = screenx
-devmode.PelsHeight = screeny
+win = visual.Window(winsize, allowGUI=False,color = [-1,-1,-1], fullscr=True,
+    screen=1,monitor='testMonitor',units='pix',waitBlanking=False)
 
-devmode.Fields = win32con.DM_PELSWIDTH | win32con.DM_PELSHEIGHT
 
 # FUNCTIONS
 # Function to collect when the spacebar has been pressed
@@ -132,8 +131,7 @@ eyetrackers = tr.find_all_eyetrackers()
 
 
 #win32api.ChangeDisplaySettings(devmode, 0)
-winsize = [screenx,screeny] 
-win = visual.Window([screenx, screeny], screen=0, fullscr=True, monitor="testMonitor", units='cm', allowStencil = True)
+
 
 #im1 = Image.open('BergenOostenrijk.jpg').resize((1280, 720)) # This is the image you want to show
 #im2 = im1.filter(ImageFilter.GaussianBlur(radius = 15)) # This is the blurred version of the same image
