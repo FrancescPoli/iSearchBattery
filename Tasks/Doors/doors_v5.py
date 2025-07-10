@@ -9,8 +9,8 @@ from psychopy import visual, core, event, sound, gui, prefs
 import numpy as np
 import pandas as pd
 import tobii_research as tr
-import win32con
-import pywintypes
+#import win32con
+#import pywintypes
 import os
 import csv
 import random
@@ -103,15 +103,11 @@ else:
 
 ############################# Screen Settings #################################
 
-devmode = pywintypes.DEVMODEType()
+screenx, screeny = 1920, 1080
+winsize=[screenx,screeny]
 
-devmode.PelsWidth = screenx
-devmode.PelsHeight = screeny
-
-devmode.Fields = win32con.DM_PELSWIDTH | win32con.DM_PELSHEIGHT
-
-winsize = [screenx,screeny] 
-win = visual.Window(winsize, screen=0, fullscr=True, monitor="testMonitor", units='cm', allowStencil = True) #change screen to 0
+win = visual.Window(winsize, allowGUI=False,color = [-1,-1,-1], fullscr=True,
+    screen=1,monitor='testMonitor',units='pix',waitBlanking=False)
 
 
 ################################ FUNCTIONS ####################################
