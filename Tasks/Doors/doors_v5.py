@@ -77,7 +77,7 @@ y_up = -door_size[1]/2*1.1 + screeny/2
 
 ################## Initial set up for eye-tracker #############################
 useEyetracker = True #TRUE WHEN AT THE LAB!
-eyeHz = 80 #eye-tracker sampling frequency (in Hz)
+eyeHz = 60 #eye-tracker sampling frequency (in Hz)
 eyetrackers = tr.find_all_eyetrackers()
 FilterSize = 2 # moving average of eye tracking samples
 xs = [np.nan]*FilterSize
@@ -86,8 +86,6 @@ ys = [np.nan]*FilterSize
 
 ################## Pop-up window to choose participant ########################
 Dlg = gui.Dlg(title="Doors")
-Dlg.addField('Participant Number:')
-Dlg.addText('(Choose a number between 1 and 1000)')
 Dlg.addField('Block (Either 1 or 2):')
 Dlg.addField('Stimuli (Either 1 or 8):')
 Dlg.addField('Animals (0) or toys (1):')
