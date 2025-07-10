@@ -19,7 +19,7 @@ import csv
 
 useEyetracker = False #TRUE WHEN AT THE LAB!
 
-Path = r"D:/py36_tobii/S_Torchlight/"
+Path =  r"/Users/babylab/Documents/Eyetracking Experiments/Yilin/Torchlight/"
 ################## Initial set up for stimuli #################################
 
 set_duration=3.5 #inter stimulus interval (between cue and target)
