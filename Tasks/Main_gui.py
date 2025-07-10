@@ -8,7 +8,7 @@ while GUI_off == False:
     myDlg.addText('Subject info')
     myDlg.addField('ID (Choose a number between 1 and 1000):')
     myDlg.addText('Task Info')
-    myDlg.addField('Task:',choices=["Doors", "Torchlight", "Planko", "LearningProgress", "ALM", "Uncertainty"])
+    myDlg.addField('Task:',choices=["Doors", "Torchlight", "Planko", "InformationGain", "ActiveLearning", "Uncertainty"])
     myDlg.addText('Calibration Info')
     myDlg.addField('Calibration:',choices=["Yes", "No"])
     ok_data = myDlg.show()  # show dialog and wait for OK or Cancel
