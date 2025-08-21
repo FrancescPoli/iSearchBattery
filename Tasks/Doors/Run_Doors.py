@@ -4,22 +4,20 @@ Created on 24/10/2022
 
 @author: Francesco Poli, Yilin Li
 """
-
 from psychopy import visual, core, event, sound, gui, prefs
+import sys, importlib
+import math
 import numpy as np
 import pandas as pd
 import tobii_research as tr
-#import win32con
-#import pywintypes
-import os
+import glob, os
 import csv
 import random
+import time
 
-
-# CHANGE THE PATH
-#Path = r"C:\Users\Experiment\Documents\Infant_Torchlight\py36_tobii\A_Doors\\" # change this in the lab
+# CHANGE THE PATH!!!!
+Path = r"/Users/babylab/Documents/Eyetracking Experiments/Yilin/iSearch/Doors/" # change this!!!!
 ################## Initial set up for stimuli #################################
-screenx, screeny = 1280, 720 # screen size
 
 total_n_stimuli = 8 #old n_locations 
 n_trials = 100
@@ -36,16 +34,16 @@ cond = [[1,total_n_stimuli], # 0 for 1 animal; 1 for many. # animal cond
         [1,total_n_stimuli]] #                             # toy cond
 
 threshold_time = .5
-animal_size = [200, 200]
-feed_size = [170, 170]
+animal_size = [250, 250]
+feed_size = [200, 200]
 # actual size = 881x1007
-door_x = 400
-door_size = [door_x,door_x*1007/881]
+door_x = 600
+door_size = [door_x,door_x]
 
 
 #actual center coord (in px): 274, 505
-door_center = (int(((881/2) - 274)/(881/door_x)),int(0))
-center = (0,-100)
+door_center = (0,0)
+center = (0,0)
 
 # to find the positions of the aois, we set 4 corners and then we can look for 
 # equidistant positions within these 4 corners (up left, up right, down left, down right)
@@ -77,7 +75,7 @@ y_up = -door_size[1]/2*1.1 + screeny/2
 
 ################## Initial set up for eye-tracker #############################
 useEyetracker = True #TRUE WHEN AT THE LAB!
-eyeHz = 60 #eye-tracker sampling frequency (in Hz)
+#eyeHz = 60 #eye-tracker sampling frequency (in Hz)
 eyetrackers = tr.find_all_eyetrackers()
 FilterSize = 2 # moving average of eye tracking samples
 xs = [np.nan]*FilterSize
@@ -85,28 +83,58 @@ ys = [np.nan]*FilterSize
 
 
 ################## Pop-up window to choose participant ########################
-Dlg = gui.Dlg(title="Doors")
-Dlg.addField('Block (Either 1 or 2):')
-Dlg.addField('Stimuli (Either 1 or 8):')
-Dlg.addField('Animals (0) or toys (1):')
-selection = Dlg.show()  # show dialog and wait for OK or Cancel
-if Dlg.OK:                                            
-    subjnum = float(selection[0])
-    n_block = float(selection[1])
-    n_stimuli = float(selection[2])
-    toys_cond = float(selection[3])
-else:
-    core.quit()
-    
+counterbalance = pd.DataFrame({
+    "order": [1,2,3,4,5,6,7,8],
+    "block":   [1,1,1,1,2,2,2,2],
+    "stimuli": [1,8,1,8,8,1,8,1],
+    "animals": [0,0,1,1,1,1,0,0]
+})
+
+# =========================
+# Ask subject & block
+# =========================
+GUI_off = False
+while not GUI_off:
+    Dlg = gui.Dlg(title="Doors")
+    Dlg.addText('Subject info')
+    Dlg.addField('ID (Choose a number between 1 and 1000):')
+    Dlg.addField('Block (1 or 2):')
+    selection = Dlg.show()
+    if not Dlg.OK:
+        core.quit()
+
+    try:
+        Subject = int(selection[0])
+        n_block = int(selection[1])
+        
+        if n_block not in [1,2]:
+            raise ValueError
+        GUI_off = True
+    except ValueError:
+        print("⚠️ Enter valid numbers (block 1 or 2).")
+        continue
+
+subjnum = Subject
+# =========================
+# Assign condition from table
+# =========================
+# Cycle subject numbers through the 4 orders
+order_index = (subjnum - 1) % 4   # 0..3
+if n_block == 2:
+    order_index += 4              # shift to second half of table
+
+row = counterbalance.iloc[order_index]
+n_stimuli = row["stimuli"]
+toys_cond = row["animals"]
+
+
 
 ############################# Screen Settings #################################
-
 screenx, screeny = 1920, 1080
-winsize=[screenx,screeny]
+winsize = [screenx, screeny]
 
 win = visual.Window(winsize, allowGUI=False,color = [-1,-1,-1], fullscr=True,
     screen=1,monitor='testMonitor',units='pix',waitBlanking=False)
-
 
 ################################ FUNCTIONS ####################################
 # Function to detect when a key has been pressed
@@ -159,12 +187,12 @@ prefs.general['audioLib'] = ['pygame']
 #music = sound.Sound(Path+"Stimuli\\hothothot.wav", stereo=True)
 if toys_cond == 0:
     audio1=sound.Sound(Path+"Stimuli\Audios\\Animal1.wav", stereo=True)
-    audio2=sound.Sound(Path+"Stimuli\Audios\\Animal2.wav", stereo=True)
+    #audio2=sound.Sound(Path+"Stimuli\Audios\\Animal2.wav", stereo=True)
     audio3=sound.Sound(Path+"Stimuli\Audios\\Animal3.wav", stereo=True)
 
 elif toys_cond == 1:
     audio1=sound.Sound(Path+"Stimuli\Audios\\Toy1.wav", stereo=True)
-    audio2=sound.Sound(Path+"Stimuli\Audios\\Toy2.wav", stereo=True)
+    #audio2=sound.Sound(Path+"Stimuli\Audios\\Toy2.wav", stereo=True)
     audio3=sound.Sound(Path+"Stimuli\Audios\\Toy3.wav", stereo=True)
 
 feed_music=sound.Sound(Path+"Stimuli\Audios\\sound.wav", stereo=True)
@@ -178,10 +206,11 @@ feed_music=sound.Sound(Path+"Stimuli\Audios\\sound.wav", stereo=True)
 
 #Load background image and door images
 os.chdir(Path+"Stimuli")
-fixation = visual.ImageStim(win, units= 'pix', size = door_size, image = 'fix.png')
+
 background=visual.ImageStim(win, units= 'pix', size = winsize, image = 'background.png')
 
 if toys_cond == 0:
+    fixation = visual.ImageStim(win, units= 'pix', size = door_size, image = 'fix.png')
     closed_door=visual.ImageStim(win, units= 'pix', size = door_size, image = 'Doors\\closed_door.png')
     closed_door.pos = door_center
 
@@ -189,6 +218,7 @@ if toys_cond == 0:
     open_door.pos = door_center
 
 elif toys_cond == 1:
+    fixation = visual.ImageStim(win, units= 'pix', size = door_size, image = 'fix_toy.png')
     closed_door=visual.ImageStim(win, units= 'pix', size = door_size, image = 'Doors\\toy_closed_door.png')
     closed_door.pos = door_center
 
@@ -296,7 +326,9 @@ elif toys_cond == 0:
 background.draw()
 win.flip()
 #music.play()
+print('\n\n=========================== Press SPACE to start ===========================')
 event.waitKeys(keyList='space')
+
 trigger = 'start_task_n_block' + str(n_block) + '_n_stimuli_' + str(n_stimuli) + '_condition_' + str(toys_cond)
 
 # show 8 stimuli (either identical or different) for 3s
@@ -307,14 +339,16 @@ win.flip()
 audio1.play()
 core.wait(stimuli_time)
 audio1.stop()
+print('\n\n=========================== Press SPACE to continue ===========================')
 event.waitKeys(keyList='space')
 # 
 background.draw()
 closed_door.draw()
 win.flip()
-audio2.play()
+#audio2.play()
 core.wait(8)
-audio2.stop()
+#audio2.stop()
+print('\n\n=========================== Press SPACE to continue ===========================')
 event.waitKeys(keyList='space')
 
 # show backgroud for 1s
@@ -323,7 +357,8 @@ open_door.draw()
 win.flip()
 audio3.play()
 core.wait(3.5)
-audio2.stop()
+audio3.stop()
+print('\n\n=========================== Press SPACE to continue ===========================')
 event.waitKeys(keyList='space')
 
 # start showing door trials. The first trial is a familiarization trial.
@@ -396,6 +431,7 @@ while core.getTime() - start_time < max_duration:
                 closed_door.draw()
                 win.flip()
                 feed_music.play()
+                print('\n\n=========================== Press SPACE to show feedback ===========================')
                 event.waitKeys(keyList='space')
 				
                 feed_music.stop()
@@ -403,6 +439,7 @@ while core.getTime() - start_time < max_duration:
                 open_door.draw()
                 feedback.draw()
                 win.flip()
+                print('\n\n=========================== Press SPACE to quit ===========================')
                 event.waitKeys(keyList='space')
    
 				
@@ -422,6 +459,7 @@ if end_study==False:
                 open_door.draw()
                 feedback.draw()
                 win.flip()
+                print('\n\n=========================== Press SPACE to quit ===========================')
                 event.waitKeys(keyList='space')
 				
                 win.close()                
