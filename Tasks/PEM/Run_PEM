@@ -1,1 +1,536 @@
 
+# -*- coding: utf-8 -*-
+"""
+Created on Fri May  9 09:58:09 2025
+
+@author: Yilin Li
+"""
+from psychopy import visual, core, event, sound, gui, prefs
+#import math
+import numpy as np
+import pandas as pd
+import tobii_research as tr
+import glob, os
+import csv
+import random
+import time
+
+#%% Load and prepare stimuli
+
+# Setting the directory of our experiment    
+
+Path = r"/Users/babylab/Documents/Eyetracking Experiments/Yilin/PEM/" #change the path!!!!
+
+
+################## Initial set up for stimuli #################################
+n_locations = 4
+total_n_stimuli = 50
+center = (0,0)
+box_size = [250,250]
+fixback_size = [500,500]
+target_size = [250,250]
+threshold_time=0.07
+fail_time=3
+fix_time = random.uniform(1.5,3)
+#max_duration=60*20
+#max_for_lookaway=60*3
+
+# to find the positions of the aois, we set 4 corners and then we can look for 
+# equidistant positions within these 4 corners (up left, up right, down left, down right)
+n_x = 2
+n_y = 2
+corners = [[300,screenx-300],[200,screeny-200]] #2x 2y
+
+
+## this function starts from number of corners and number of aois required to 
+## return equidistant aois: the positions fit tobii positions, for tobii (0,0) is on top left
+def equidistant_aois(n_x, n_y, corners):
+    aois=[]
+    proportion_x = np.linspace(corners[0][0],corners[0][1],n_x)
+    proportion_y = np.linspace(corners[1][0],corners[1][1],n_y)
+    for this_n_y in range(n_y):
+        for this_n_x in range(n_x):
+            aois.append([proportion_x[this_n_x], proportion_y[this_n_y]])
+    return(aois)
+
+    
+aoi_centers = equidistant_aois(n_x, n_y, corners) #the position for the four corners can be called by  aoi_centers[] inside should be the location index
+aoi_side_length = 250
+    
+aoi_centers_test = [[480,540],[1440,540]]
+aoi_side_test = 250
+
+################## Initial set up for eye-tracker #############################
+useEyetracker = True #TRUE WHEN AT THE LAB!
+#eyeHz = 60 #eye-tracker sampling frequency (in Hz)
+eyetrackers = tr.find_all_eyetrackers()
+FilterSize = 2 # moving average of eye tracking samples
+xs = [np.nan]*FilterSize
+ys = [np.nan]*FilterSize
+
+
+
+################## Pop-up window to choose participant ########################
+GUI_off = False
+while GUI_off == False:
+    Dlg = gui.Dlg(title="PEM")
+    Dlg.addText('Subject info')
+    Dlg.addField('ID (Choose a number between 1 and 1000):')
+    Dlg.addText('Experiment Info')
+    Dlg.addField('Order:' ,choices=["1", "2", "3", "4", "5", "6"])
+    PEM_data = Dlg.show()  # show dialog and wait for OK or Cancel
+    
+    if Dlg.OK:  # or if ok_data is not None
+        subj=PEM_data[0]
+        Order = PEM_data[1]
+        if subj:
+            GUI_off= True
+        
+    else:
+        print('You pressed Cancel!!\n I will close down!!!!!')
+        GUI_off = True
+        core.quit()
+
+
+
+################################ FUNCTIONS ####################################
+screenx, screeny = 1920, 1080
+winsize = [screenx, screeny]
+
+win = visual.Window(winsize, allowGUI=False,color = [-1,-1,-1], fullscr=True,
+    screen=1,monitor='testMonitor',units='pix',waitBlanking=False)
+
+
+def shuffle_images_in_folder(image_folder):
+    # Get all image file paths in the folder
+    image_paths = glob.glob(os.path.join(image_folder, "*.png"))  # Adjust if necessary
+    
+    # Shuffle the image paths list
+    random.shuffle(image_paths)
+    
+    # Extract image names (just the filenames, not full paths)
+    shuffled_image_names = [os.path.basename(path) for path in image_paths]
+    
+    # Return the shuffled list of image names
+    return shuffled_image_names
+
+
+newleft_x=-1
+newleft_y=-1
+newright_x=-1
+newright_y=-1
+trigger=[]
+condition=[]
+def gaze_data_callback(gaze_data):
+    global newleft_x, newleft_y, newright_x, newright_y, trigger, condition
+    #startT = time.time()
+    newleft_x = gaze_data.get('left_gaze_point_on_display_area')[0]
+    newleft_y = gaze_data.get('left_gaze_point_on_display_area')[1]
+    newright_x = gaze_data.get('right_gaze_point_on_display_area')[0]
+    newright_y = gaze_data.get('right_gaze_point_on_display_area')[1]
+    # Check if this file already exists. If not, write header in first row
+    if len(trigger)==0:
+        gaze_data['triggers']=' '
+    else:
+        gaze_data['triggers']=trigger
+        trigger=[]
+    if len(condition)==0:
+        gaze_data['conditions']=' '
+    else:
+        gaze_data['conditions']=condition
+        condition=[]
+    #print(gaze_data)
+    if (not os.path.isfile(output_file)):
+        with open(output_file,'w+', newline='') as f:
+            w = csv.DictWriter(f, gaze_data.keys())
+            w.writeheader()
+            w.writerow(gaze_data)
+    else:  
+        #print(gaze_data)
+        with open(output_file,'a+', newline='') as f:
+            w = csv.DictWriter(f, gaze_data.keys())
+            w.writerow(gaze_data)
+    return()
+
+def square_aoi(center_x, center_y, side):
+    x_left = center_x - side/2
+    x_right = center_x + side/2
+    y_up = center_y - side/2
+    y_down = center_y + side/2
+    return(x_left,x_right,y_up,y_down)
+
+# Function to detect when a key has been pressed
+def get_bar():
+    keys = event.getKeys() #record whether a key is pressed
+    if 'escape' in keys: # for quit
+        if useEyetracker:
+            eyetrackers[0].unsubscribe_from(tr.EYETRACKER_GAZE_DATA, gaze_data_callback)
+        win.close()
+        core.quit()
+        print('Testing session ended')
+        
+    elif  'q' in keys:
+         print("\n------------ DISTRACTOR PRESENTATION ------------\n--------------- Pres Q to stop it---------------\n")
+
+         start = time.time()
+         
+
+         distractor = visual.MovieStim(win, os.path.join(Path, 'Stimuli/newPausa.mp4'),size=(1920, 1080),noAudio=True)
+         distractor_audio = sound.Sound(os.path.join(Path, 'Stimuli/newPausa.wav'),syncToWin=True, volume=0.5)
+     
+         print(time.time()-start)
+         trigger = 'Distractor_started'
+         bac_music.stop()
+    
+     # present video untill you stop
+         distractor_audio.play()
+         while 'q' not in event.getKeys() and not distractor.isFinished:
+             distractor.draw()
+             win.flip()
+         
+         distractor.stop()
+         distractor_audio.stop()
+         distractor.unload()
+         del distractor
+         del distractor_audio
+         
+         trigger = 'Distractor_ended'
+     
+         win.flip()
+         bac_music.play()
+   
+
+
+    elif 'space' in keys:
+     
+         print("\n------------ EXPERIMENT PAUSED ------------\n------- Pres SPACEBAR to start again-------\n")
+     
+     # Start pause
+         background.draw()
+         win.flip()
+         trigger = 'Pause_started'
+     
+  
+     
+         while 'space' not in event.getKeys():
+             core.wait(0.02)
+             
+         trigger = 'Pause_ended'
+         win.flip()
+       
+        
+
+
+############################## LOAD STIMULI ###################################
+# sound
+prefs.general['audioLib'] = ['pygame']
+
+targetsound = sound.Sound(Path+"Stimuli/target.wav", stereo=True)
+bac_music = sound.Sound(os.path.join(Path, "Stimuli", "hothothot.wav"), 
+                          stereo=True)  # Critical for long files
+
+#Load background image
+#os.chdir(Path+"Stimuli")
+#background
+background = visual.ImageStim(win, units= 'pix', size = winsize, image = Path+"Stimuli/background.png")
+background.pos=center
+
+back_test = visual.ImageStim(win, units= 'pix', size = winsize, image = Path+"Stimuli/back_test.png")
+back_test.pos=center
+
+#boxes
+box=np.zeros([n_locations],dtype=object)
+for x in range(n_locations):
+    box[x]=visual.ImageStim(win, units= 'pix', size = box_size, image = Path+"Stimuli/box.png")
+    box[x].pos = (aoi_centers[x][0]-screenx/2, screeny/2 -aoi_centers[x][1])  # the center of python is in the middle, transfer aoi centers to present the stimuli
+
+#fixation
+fix_back = visual.ImageStim(win, units= 'pix', size = fixback_size, image = Path+"Stimuli/box.png")
+fix_back.pos=center
+
+stim_list = pd.read_csv(Path+"Stimuli/stimuli_4.csv")
+
+# Example Usage
+image_folder = Path+"Stimuli/Target"
+fix_folder = Path+"Stimuli/fixation"
+
+# Get shuffled image names and store in a variable 0-49
+shuffled_image_names = shuffle_images_in_folder(image_folder)
+stimulus=np.zeros(total_n_stimuli,dtype=object)
+
+
+
+######################## HERE STARTS THE RECORDING! ###########################
+if useEyetracker:
+    
+    eyetrackers = tr.find_all_eyetrackers()  # Returns a list of detected trackers
+    
+    if not eyetrackers:  # Check if list is empty
+        print("Error: No eye trackers found!")
+        # Option 1: Exit the program
+        # import sys
+        # sys.exit(1)
+        
+        # Option 2: Skip eye tracking and continue without it
+        useEyetracker = False  
+    else:
+        # Subscribe to gaze data from the first available tracker
+        output_file = Path + 'Data/'+ 'PEM'+subj + '_' + Order + '.csv'
+        eyetrackers[0].subscribe_to(
+            tr.EYETRACKER_GAZE_DATA,
+            gaze_data_callback,
+            as_dictionary=True
+        )
+        print(f"Recording gaze data to: {output_file}")#CV_Start()
+    
+
+
+background.draw()
+win.flip()
+print('\n\n=========================== Press SPACE to start ===========================')
+event.waitKeys(keyList='space',clearEvents=True)
+bac_music.play()
+trigger = 'start_task'
+
+for trial in range(len(stim_list)):
+    
+    if  Order == '1':
+        target_loc = stim_list.loc[trial,'location_1']
+        condition = stim_list.loc[trial,'conditions_1']
+        
+    elif Order == '2':
+         target_loc = stim_list.loc[trial,'location_2']
+         condition = stim_list.loc[trial,'conditions_2']
+    elif Order == '3':
+         target_loc = stim_list.loc[trial,'location_3']
+         condition = stim_list.loc[trial,'conditions_3']
+    elif Order == '4':
+         target_loc = stim_list.loc[trial,'location_4']
+         condition = stim_list.loc[trial,'conditions_4']
+    elif Order == '5':
+         target_loc = stim_list.loc[trial,'location_5']
+         condition = stim_list.loc[trial,'conditions_5']
+    elif Order == '6':
+         target_loc = stim_list.loc[trial,'location_6']
+         condition = stim_list.loc[trial,'conditions_6']
+    
+    
+    
+    fixation=visual.ImageStim(win, units= 'pix', size = target_size, image = fix_folder + '/'+shuffled_image_names[trial])
+    target = visual.ImageStim(win, units= 'pix', size = target_size, image = image_folder + '/'+shuffled_image_names[trial])
+    target.pos=(aoi_centers[target_loc][0]-screenx/2, screeny/2 -aoi_centers[target_loc][1])
+    
+    
+    threshold_reached = False
+        #end_study = False
+    end_reached = False		
+    track_time = None
+    
+    nan_time = None
+
+ 
+    try:
+            if useEyetracker:
+                print('\fam------- Trial n '+ str(trial)+ '/target loc n '+str(target_loc)+' -------')
+            #trigger = 'start_trial_'+str(trial)+ '\target loc n '+str(target_loc)
+            #draw background
+            #background.draw()
+            #win.flip()
+            #event.waitKeys(keyList='space',clearEvents=True)
+            #core.wait(0.5)
+            #get_bar()
+            
+            #draw boxes
+                trigger = 'box_trial_'+str(trial)+ '/target loc n '+str(target_loc)
+                background.draw()
+                fix_back.draw()
+                for this_box in box:
+                    this_box.draw()
+                win.flip()
+            #event.waitKeys(keyList='space',clearEvents=True)
+                core.wait(1)
+                get_bar()
+
+            #draw fixation
+                trigger = 'fixation_trial_'+str(trial)+ '/target loc n '+str(target_loc)
+                background.draw()
+                fix_back.draw()
+                for this_box in box:
+                    this_box.draw()
+                fixation.draw()
+                win.flip()
+                core.wait(fix_time)
+                get_bar()
+    
+            #draw target
+            while threshold_reached==False and end_reached == False:
+                trigger = 'target_trial_'+str(trial)+ '/target loc n '+str(target_loc)
+                background.draw()
+                fix_back.draw()
+                for this_box in box:
+                    this_box.draw()
+                target.draw()
+                win.flip()
+                core.wait(0.07)
+                #get_bar()
+                #if newright_x+newright_y>-1 or newleft_x+newleft_y>-1:
+                   
+                xs.append(np.nanmean([newleft_x, newright_x])*winsize[0])  # mean x coord
+                ys.append(np.nanmean([newleft_y, newright_y])*winsize[1])  # mean y coord
+                    # remove oldest gaze coordinates
+                xs=xs[1:]
+                ys=ys[1:]
+                    # take average of gaze coordinates
+                    #x=np.nanmean(xs) #a fixation filter will be used instead of this line
+                    #y=np.nanmean(ys)
+                    
+                x = np.nanmean(xs) if not all(np.isnan(xs)) else np.nan
+                y = np.nanmean(ys) if not all(np.isnan(ys)) else np.nan
+    
+                    # Explicit NaN handling
+                both_nan = np.isnan(x) and np.isnan(y)
+    
+                if not both_nan: 
+                                   
+                    # check whether they are looking at the target
+                        x_left, x_right, y_up, y_down = square_aoi(aoi_centers[target_loc][0],aoi_centers[target_loc][1],aoi_side_length)
+                        if x_left < x < x_right and y_up < y < y_down: #check if gaze is in the aoi
+                            nan_time = None
+                            if track_time is None: #if it's the first look in an aoi
+                                track_time = core.getTime() # get the time of when that happens
+                            else: # if there's already a look to aoi
+                                if core.getTime() - track_time > threshold_time:# check if threshold time is reached
+                                    threshold_reached=True # if reached, stop the waiting and show the target
+                    
+                        else:
+                            track_time = None
+                            if nan_time is None: #if it's the first look in an aoi
+                                nan_time = core.getTime() # get the time of when that happens
+                            else: # if there's already a look to aoi
+                                if core.getTime() - nan_time > fail_time:# check if threshold time is reached
+                                    end_reached=True
+                else:  # Both coordinates are NaN
+                        track_time = None  # Reset AOI timer
+                        if nan_time is None:
+                            nan_time = core.getTime()
+                            print("Warning: No valid gaze data")
+                        elif core.getTime() - nan_time > fail_time:
+                            end_reached = True
+                            print("Trial aborted: No gaze data for", fail_time, "seconds")
+           
+            
+            if threshold_reached==True:
+                trigger = 'reached_trial_'+str(trial)+ '/target loc n '+str(target_loc)
+                core.wait(3)
+                get_bar()
+            elif end_reached==True:
+                trigger = 'Not_reach_at_trial_'+str(trial)+ '/target loc n '+str(target_loc)
+                core.wait(3)			    
+                print("\n\n===========press space to continue=========")
+                background.draw()
+                fix_back.draw()
+                for this_box in box:
+                    this_box.draw()
+                win.flip()
+                event.waitKeys(keyList='space')
+                
+           
+            
+            
+            trigger = 'stop_trial_'+str(trial)
+            
+            #### Stop and present the objects at the end of a block
+            if trial == 12:
+                    bac_music.stop()
+                    back_test.draw()
+                    win.flip()
+                    get_bar()
+                    print('======= Press SPACE to start test =====Press q to show distracter============')
+                    event.waitKeys(keyList='space',clearEvents=True)
+                
+                    trigger = 'test_1_start'
+                    for m, n in zip(range(4, 13), range(26, 35)):
+                    #targetsound = sound.Sound(Path+"Stimuli\\targetsound.mp3", stereo=True)
+                    # choose familiar item location at random (0 or 1)
+                        familiar_location = int(np.random.binomial(1, .5, 1))
+                        novel_location = 0
+                        if familiar_location == 0:
+                            novel_location=1
+                        trigger = 'familiar_number_'+str(m)+'_location_'+str(familiar_location) #0 is left, 1 is right
+                        print(m,n)
+                        stimulus[m] = visual.ImageStim(win, units= 'pix', size = target_size, image = image_folder + '/'+shuffled_image_names[m])
+                        stimulus[n] = visual.ImageStim(win, units= 'pix', size = target_size, image = image_folder + '/'+shuffled_image_names[n])
+                        stimulus[n].pos = (aoi_centers_test[novel_location][0]-screenx/2,0)
+                        stimulus[m].pos = (aoi_centers_test[familiar_location][0]-screenx/2,0)
+                        back_test.draw()
+                        stimulus[n].draw()
+                        stimulus[m].draw()
+                        targetsound.play()
+                        win.flip()
+                        core.wait(7)
+                        targetsound.stop()
+                        back_test.draw()
+                        win.flip()
+                        core.wait(1)
+                        get_bar()
+                    
+                    bac_music.play()
+                
+
+            elif trial == 25:
+                    bac_music.stop()
+                    back_test.draw()
+                    win.flip()
+                    get_bar()
+                    print('======= Press SPACE to start test =====Press q to show distracter============')
+                    event.waitKeys(keyList='space',clearEvents=True)
+                 
+                    trigger = 'test_2_start'
+                    for m, n in zip(range(17, 26), range(35, 44)):
+                     #targetsound = sound.Sound(Path+"Stimuli\\targetsound.mp3", stereo=True)
+                     # choose familiar item location at random (0 or 1)
+                         familiar_location = int(np.random.binomial(1, .5, 1))
+                         novel_location = 0
+                         if familiar_location == 0:
+                             novel_location=1
+                         trigger = 'familiar_number_'+str(m)+'_location_'+str(familiar_location) #0 is left, 1 is right
+                         print(m,n)
+                         stimulus[m] = visual.ImageStim(win, units= 'pix', size = target_size, image = image_folder + '/'+shuffled_image_names[m])
+                         stimulus[n] = visual.ImageStim(win, units= 'pix', size = target_size, image = image_folder + '/'+shuffled_image_names[n])
+                         stimulus[n].pos = (aoi_centers_test[novel_location][0]-screenx/2,0)
+                         stimulus[m].pos = (aoi_centers_test[familiar_location][0]-screenx/2,0)
+                         back_test.draw()
+                         stimulus[n].draw()
+                         stimulus[m].draw()
+                         targetsound.play()
+                         win.flip()
+                         core.wait(7)
+                         targetsound.stop()
+                         back_test.draw()
+                         win.flip()
+                         core.wait(1)
+                         get_bar()
+                
+                    bac_music.play()
+                     
+            
+                
+    
+    except KeyboardInterrupt:
+        pass
+
+
+			
+
+
+#Stop Eyetracker
+if useEyetracker:
+    eyetrackers[0].unsubscribe_from(tr.EYETRACKER_GAZE_DATA, gaze_data_callback)
+    #CV_Stop()
+    #CV_Close() 
+        
+win.close()
+
+bac_music.stop()
+targetsound.stop()
+core.quit()
