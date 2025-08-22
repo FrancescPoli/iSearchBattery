@@ -16,8 +16,10 @@ import random
 import time
 
 # CHANGE THE PATH!!!!
-Path = r"/Users/babylab/Documents/Eyetracking Experiments/Yilin/iSearch/Doors/" # change this!!!!
+Path = r"C:\Users\itali\Documents\iSearchBattery\Tasks\Doors\\" 
 ################## Initial set up for stimuli #################################
+
+screenx, screeny = 1920/2, 1200/2
 
 total_n_stimuli = 8 #old n_locations 
 n_trials = 100
@@ -74,7 +76,7 @@ y_up = -door_size[1]/2*1.1 + screeny/2
 
 
 ################## Initial set up for eye-tracker #############################
-useEyetracker = True #TRUE WHEN AT THE LAB!
+useEyetracker = False #TRUE WHEN AT THE LAB!
 #eyeHz = 60 #eye-tracker sampling frequency (in Hz)
 eyetrackers = tr.find_all_eyetrackers()
 FilterSize = 2 # moving average of eye tracking samples
@@ -130,10 +132,10 @@ toys_cond = row["animals"]
 
 
 ############################# Screen Settings #################################
-screenx, screeny = 1920, 1080
+#screenx, screeny = 1920, 1080
 winsize = [screenx, screeny]
 
-win = visual.Window(winsize, allowGUI=False,color = [-1,-1,-1], fullscr=True,
+win = visual.Window(winsize, allowGUI=False,color = [-1,-1,-1], fullscr=False,
     screen=1,monitor='testMonitor',units='pix',waitBlanking=False)
 
 ################################ FUNCTIONS ####################################

@@ -49,9 +49,9 @@ def gaze_data_callback(gaze_data):
 warn_count = 0
 
 eyetrackers = tr.find_all_eyetrackers()
-useEyetracker = True #TRUE WHEN AT THE LAB!
+useEyetracker = False #TRUE WHEN AT THE LAB!
 
-Path = r'D:\Documents\My Experiments\Francesco\SMILEY_Collab\S_StatLearning_tr\\'
+Path = r'C:\Users\itali\Documents\iSearchBattery\Tasks\InformationGain\\'
  
 ##################### Funtions ##############################################
 # initialize some variables
@@ -166,9 +166,9 @@ DlgQuit = gui.Dlg(title="Press OK to quit")
 
 ##################### Settings ##############################################         
 # Set window size [x,y]
-winsize = [1920,1080] #Screen from the Tobii
+winsize = [1920/2,1080/2] #Screen from the Tobii
 
-win = visual.Window(winsize, screen=1, fullscr=True, color=(1,1,1), units = 'pix') #monitor="testMonitor" 
+win = visual.Window(winsize, screen=0, fullscr=False, color=(1,1,1), units = 'pix') #monitor="testMonitor" 
 
 # set the target locations, pseudorandomized depending on participant number (location is expressed in a complicated manner just to match exactly the old matlab script)
 targ_loc=np.array([[-(winsize[0]*.8-(winsize[0]/2)), winsize[1]*.8-(winsize[1]/2)],
@@ -190,7 +190,7 @@ sequences= pd.read_csv(Path + 'sequences_t.csv', header=None).transpose()
 music=1 #set to zero to turn music off
 if music==1:
     prefs.general['audioLib'] = ['pygame']
-    hothothot = sound.Sound("hothothot_long.wav", stereo=False)
+    hothothot = sound.Sound(Path +"hothothot_long.wav", stereo=False)
    # Load images
 stimuli=np.zeros([32],dtype=object)
 n=-1

@@ -16,11 +16,11 @@ import time
 GUI_off = False
 while GUI_off == False:
     myDlg = gui.Dlg(title="CEAL_Battery")
-    myDlg.addText('Subject info')
-    myDlg.addField('ID (Choose a number between 1 and 1000):')
-    myDlg.addText('Task Info')
+    #myDlg.addText('Subject info')
+    myDlg.addField('Participant ID (Choose a number between 1 and 1000):')
+    #myDlg.addText('Task Info')
     myDlg.addField('Task:', choices=["Doors", "Torchlight", "Planko", "InformationGain", "ActiveLearning", "Uncertainty", "PEM"])
-    myDlg.addText('Calibration Info')
+    #myDlg.addText('Calibration Info')
     myDlg.addField('Calibration:', choices=["Yes", "No"])
     ok_data = myDlg.show()
 
