@@ -441,11 +441,11 @@ while core.getTime() - start_time < max_duration:
                 open_door.draw()
                 feedback.draw()
                 win.flip()
-                print('\n\n=========================== Press SPACE to quit ===========================')
-                event.waitKeys(keyList='space')
+                print('\n\n=========================== Press Q to quit ===========================')
+                event.waitKeys(keyList='q')
    
-				
-                win.close()                
+                win.close()  
+				print('\n\n=========================== Testing session ended ===========================')
                 core.quit()              
 				
         except KeyboardInterrupt:
@@ -461,11 +461,12 @@ if end_study==False:
                 open_door.draw()
                 feedback.draw()
                 win.flip()
-                print('\n\n=========================== Press SPACE to quit ===========================')
-                event.waitKeys(keyList='space')
-				
-                win.close()                
-                core.quit()   
+                print('\n\n=========================== Press Q to quit ===========================')
+                event.waitKeys(keyList='q')
+   
+                win.close()  
+				print('\n\n=========================== Testing session ended ===========================')
+                core.quit()    
 			
 #Stop Eyetracker
 if useEyetracker:
