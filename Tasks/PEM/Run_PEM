@@ -19,9 +19,10 @@ import time
 
 # Setting the directory of our experiment    
 
-Path = r"/Users/babylab/Documents/Eyetracking Experiments/Yilin/PEM/" #change the path!!!!
+Path = r"C:\Users\itali\Documents\iSearchBattery\Tasks\PEM\\" 
 
 
+screenx, screeny = 1920/2, 1200/2
 ################## Initial set up for stimuli #################################
 n_locations = 4
 total_n_stimuli = 50
@@ -61,7 +62,7 @@ aoi_centers_test = [[480,540],[1440,540]]
 aoi_side_test = 250
 
 ################## Initial set up for eye-tracker #############################
-useEyetracker = True #TRUE WHEN AT THE LAB!
+useEyetracker = False #TRUE WHEN AT THE LAB!
 #eyeHz = 60 #eye-tracker sampling frequency (in Hz)
 eyetrackers = tr.find_all_eyetrackers()
 FilterSize = 2 # moving average of eye tracking samples
@@ -74,10 +75,10 @@ ys = [np.nan]*FilterSize
 GUI_off = False
 while GUI_off == False:
     Dlg = gui.Dlg(title="PEM")
-    Dlg.addText('Subject info')
-    Dlg.addField('ID (Choose a number between 1 and 1000):')
-    Dlg.addText('Experiment Info')
-    Dlg.addField('Order:' ,choices=["1", "2", "3", "4", "5", "6"])
+    #Dlg.addText('Subject info')
+    Dlg.addField('Participant ID (Choose a number between 1 and 1000):')
+    #Dlg.addText('Experiment Info')
+    Dlg.addField('Experiment Order:' ,choices=["1", "2", "3", "4", "5", "6"])
     PEM_data = Dlg.show()  # show dialog and wait for OK or Cancel
     
     if Dlg.OK:  # or if ok_data is not None
@@ -94,11 +95,11 @@ while GUI_off == False:
 
 
 ################################ FUNCTIONS ####################################
-screenx, screeny = 1920, 1080
+#screenx, screeny = 1920, 1080
 winsize = [screenx, screeny]
 
-win = visual.Window(winsize, allowGUI=False,color = [-1,-1,-1], fullscr=True,
-    screen=1,monitor='testMonitor',units='pix',waitBlanking=False)
+win = visual.Window(winsize, allowGUI=False,color = [-1,-1,-1], fullscr=False,
+    screen=0,monitor='testMonitor',units='pix',waitBlanking=False)
 
 
 def shuffle_images_in_folder(image_folder):
@@ -226,7 +227,7 @@ def get_bar():
 prefs.general['audioLib'] = ['pygame']
 
 targetsound = sound.Sound(Path+"Stimuli/target.wav", stereo=True)
-bac_music = sound.Sound(os.path.join(Path, "Stimuli", "hothothot.wav"), 
+bac_music = sound.Sound(os.path.join(Path, "Stimuli", "hothothot_long.wav"), 
                           stereo=True)  # Critical for long files
 
 #Load background image
