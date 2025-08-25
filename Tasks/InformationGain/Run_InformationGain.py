@@ -286,10 +286,16 @@ for col in sequences:
     cue_idx+=2
         
      
-
+#Stop Eyetracker
+if useEyetracker:
+    eyetrackers[0].unsubscribe_from(tr.EYETRACKER_GAZE_DATA, gaze_data_callback)
+    #CV_Stop()
+    #CV_Close() 
+        
 
 hothothot.stop()
 show_end()  
+
 
 win.close()
 core.quit()
