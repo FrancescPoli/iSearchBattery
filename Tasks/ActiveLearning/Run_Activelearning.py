@@ -35,6 +35,8 @@ stimulus_size = 200/1920*1280
 n_x = 3
 n_y = 2
 corners = [[300/1920*1280,(1920-300)/1920*1280],[250/1080*720,(1080-250)/1080*720]]
+
+#corners = [[300/1920*1280,(1920-300)/1920*1280],[250/1080*720,(1080-250)/1080*720]]
 ## this function starts from number of corners and number of aois required to 
 ## return equidistant aois:
 def equidistant_aois(n_x, n_y, corners):
@@ -55,9 +57,9 @@ ntrials_phase2 = 1000
 
 
 # retrieve and use yoked data from previous participant
-yoked_ones = os.listdir(Path+r"yoked_data\\")
-yoked = pd.read_csv(Path + r"yoked_data\\" + yoked_ones[-1])
-yoked_stamp = Path + r"yoked_data\\" + yoked_ones[-1]
+yoked_ones = os.listdir(Path+r"Yoked_data\\")
+yoked = pd.read_csv(Path + r"Yoked_data\\" + yoked_ones[-1])
+yoked_stamp = Path + r"Yoked_data\\" + yoked_ones[-1]
 yoked_stamp = yoked_stamp[-3:]
 
 aois_yoked = []
@@ -101,7 +103,7 @@ else:
     
 
 ############################# Screen Settings #################################
-screenx, screeny = 1920, 1080
+screenx, screeny = 1280, 720
 winsize=[screenx,screeny]
 
 win = visual.Window(winsize, allowGUI=False,color = [-1,-1,-1], fullscr=True,
