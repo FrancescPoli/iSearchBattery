@@ -22,7 +22,7 @@ import time
 Path = r"C:\Users\itali\Documents\iSearchBattery\Tasks\PEM\\" 
 
 
-screenx, screeny = 1920/2, 1200/2
+screenx, screeny = 1280, 720
 ################## Initial set up for stimuli #################################
 n_locations = 4
 total_n_stimuli = 50
@@ -62,7 +62,7 @@ aoi_centers_test = [[480,540],[1440,540]]
 aoi_side_test = 250
 
 ################## Initial set up for eye-tracker #############################
-useEyetracker = False #TRUE WHEN AT THE LAB!
+useEyetracker = True #TRUE WHEN AT THE LAB!
 #eyeHz = 60 #eye-tracker sampling frequency (in Hz)
 eyetrackers = tr.find_all_eyetrackers()
 FilterSize = 2 # moving average of eye tracking samples
@@ -98,8 +98,8 @@ while GUI_off == False:
 #screenx, screeny = 1920, 1080
 winsize = [screenx, screeny]
 
-win = visual.Window(winsize, allowGUI=False,color = [-1,-1,-1], fullscr=False,
-    screen=0,monitor='testMonitor',units='pix',waitBlanking=False)
+win = visual.Window(winsize, allowGUI=False,color = [-1,-1,-1], fullscr=True,
+    screen=1,monitor='testMonitor',units='pix',waitBlanking=False)
 
 
 def shuffle_images_in_folder(image_folder):

@@ -19,7 +19,7 @@ import time
 Path = r"C:\Users\itali\Documents\iSearchBattery\Tasks\Doors\\" 
 ################## Initial set up for stimuli #################################
 
-screenx, screeny = 1920/2, 1200/2
+screenx, screeny = 1280, 720
 
 total_n_stimuli = 8 #old n_locations 
 n_trials = 100
@@ -76,7 +76,7 @@ y_up = -door_size[1]/2*1.1 + screeny/2
 
 
 ################## Initial set up for eye-tracker #############################
-useEyetracker = False #TRUE WHEN AT THE LAB!
+useEyetracker = True #TRUE WHEN AT THE LAB!
 #eyeHz = 60 #eye-tracker sampling frequency (in Hz)
 eyetrackers = tr.find_all_eyetrackers()
 FilterSize = 2 # moving average of eye tracking samples
@@ -135,7 +135,7 @@ toys_cond = row["animals"]
 #screenx, screeny = 1920, 1080
 winsize = [screenx, screeny]
 
-win = visual.Window(winsize, allowGUI=False,color = [-1,-1,-1], fullscr=False,
+win = visual.Window(winsize, allowGUI=False,color = [-1,-1,-1], fullscr=True,
     screen=1,monitor='testMonitor',units='pix',waitBlanking=False)
 
 ################################ FUNCTIONS ####################################
@@ -445,9 +445,8 @@ while core.getTime() - start_time < max_duration:
                 event.waitKeys(keyList='q')
    
                 win.close()  
-				print('\n\n=========================== Testing session ended ===========================')
+                print('\n\n=========================== Testing session ended ===========================')
                 core.quit()              
-				
         except KeyboardInterrupt:
                 pass       
 
@@ -464,8 +463,8 @@ if end_study==False:
                 print('\n\n=========================== Press Q to quit ===========================')
                 event.waitKeys(keyList='q')
    
-                win.close()  
-				print('\n\n=========================== Testing session ended ===========================')
+                win.close()
+                print('\n\n=========================== Testing session ended ===========================')
                 core.quit()    
 			
 #Stop Eyetracker
