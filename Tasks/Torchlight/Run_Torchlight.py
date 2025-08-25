@@ -17,9 +17,9 @@ import tobii_research as tr
 import os
 import csv
 
-useEyetracker = False #TRUE WHEN AT THE LAB!
+useEyetracker = True #TRUE WHEN AT THE LAB!
 
-Path =  r"/Users/babylab/Documents/Eyetracking Experiments/Yilin/Torchlight/"
+Path = r"C:\Users\itali\Documents\iSearchBattery\Tasks\Torchlight\\"
 ################## Initial set up for stimuli #################################
 
 set_duration=3.5 #inter stimulus interval (between cue and target)
@@ -68,7 +68,7 @@ target_pos_pixels = [[[0,450],[-100,375]],
 
 ################################################################################
 
-screenx, screeny = 1920, 1080
+screenx, screeny = int(1920/2), int(1080/2)
 winsize=[screenx,screeny]
 
 win = visual.Window(winsize, allowGUI=False,color = [-1,-1,-1], fullscr=True,

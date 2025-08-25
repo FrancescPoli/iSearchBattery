@@ -18,7 +18,7 @@ active_condition = 1
 yoked_condition = 1
 
 #remember to change the path!!!
-#Path = r"C:\Users\Experiment\Documents\Infant_Torchlight\py36_tobii\A_InfantActiveLearn\\"
+Path = r"C:\Users\itali\Documents\iSearchBattery\Tasks\ActiveLearning\\"
 
 ################## Initial set up for stimuli #################################
 n_locations = 6

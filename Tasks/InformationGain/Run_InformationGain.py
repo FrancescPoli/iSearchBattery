@@ -49,7 +49,7 @@ def gaze_data_callback(gaze_data):
 warn_count = 0
 
 eyetrackers = tr.find_all_eyetrackers()
-useEyetracker = False #TRUE WHEN AT THE LAB!
+useEyetracker = True #TRUE WHEN AT THE LAB!
 
 Path = r'C:\Users\itali\Documents\iSearchBattery\Tasks\InformationGain\\'
  
@@ -168,7 +168,7 @@ DlgQuit = gui.Dlg(title="Press OK to quit")
 # Set window size [x,y]
 winsize = [1920/2,1080/2] #Screen from the Tobii
 
-win = visual.Window(winsize, screen=0, fullscr=False, color=(1,1,1), units = 'pix') #monitor="testMonitor" 
+win = visual.Window(winsize, screen=1, fullscr=False, color=(1,1,1), units = 'pix') #monitor="testMonitor" 
 
 # set the target locations, pseudorandomized depending on participant number (location is expressed in a complicated manner just to match exactly the old matlab script)
 targ_loc=np.array([[-(winsize[0]*.8-(winsize[0]/2)), winsize[1]*.8-(winsize[1]/2)],
