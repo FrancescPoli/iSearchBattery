@@ -188,14 +188,14 @@ def gaze_data_callback(gaze_data):
 prefs.general['audioLib'] = ['pygame']
 #music = sound.Sound(Path+"Stimuli\\hothothot.wav", stereo=True)
 if toys_cond == 0:
-    audio1=sound.Sound(Path+"Stimuli\Audios\\Animal1.wav", stereo=True)
+    audio1=sound.Sound(Path+"Stimuli\Audios\\animal1it.wav", stereo=True)
     #audio2=sound.Sound(Path+"Stimuli\Audios\\Animal2.wav", stereo=True)
-    audio3=sound.Sound(Path+"Stimuli\Audios\\Animal3.wav", stereo=True)
+    audio3=sound.Sound(Path+"Stimuli\Audios\\animal2it.wav", stereo=True)
 
 elif toys_cond == 1:
-    audio1=sound.Sound(Path+"Stimuli\Audios\\Toy1.wav", stereo=True)
+    audio1=sound.Sound(Path+"Stimuli\Audios\\toy1it.wav", stereo=True)
     #audio2=sound.Sound(Path+"Stimuli\Audios\\Toy2.wav", stereo=True)
-    audio3=sound.Sound(Path+"Stimuli\Audios\\Toy3.wav", stereo=True)
+    audio3=sound.Sound(Path+"Stimuli\Audios\\toy2it.wav", stereo=True)
 
 feed_music=sound.Sound(Path+"Stimuli\Audios\\sound.wav", stereo=True)
 #fixation

@@ -57,6 +57,26 @@ task_paths = {
     "PEM": ("PEM", "Run_PEM")
 }
 
+#if Calibration == "Yes":
+#    os.chdir(r"C:\Users\itali\Documents\iSearchBattery\Tasks\psychopy_tobii_infant\\")
+    # import Psychopy tobii infant
+#    from psychopy_tobii_infant import TobiiInfantController
+
+#    winsize = [1280, 720]
+#    win = visual.Window(winsize, fullscr=True, allowGUI=False,screen = 1, color = "#a6a6a6", unit='pix')
+
+    # visual stimuli
+#    CALISTIMS = glob.glob("CalibrationStim\\*.png")
+
+    # video
+#    VideoGrabber = visual.MovieStim(win, "CalibrationStim\\Attentiongrabber.mp4", loop=True, size=[800,450],volume =0.4, unit = 'pix')  
+
+    # sound
+#    Sound = sound.Sound(directory + "CalibrationStim\\audio.wav")
+
+#    EyeTracker = TobiiInfantController(win)
+
+
 try:
     folder_name, module_name = task_paths[Task]
 
