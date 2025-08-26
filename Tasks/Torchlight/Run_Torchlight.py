@@ -61,14 +61,26 @@ elif subjnum%2 == 0: # if even, uniform condition first
                      [4]*trials])-1
     skewed=[0,0,1,1]
 
-target_pos_pixels = [[[0,450],[-100,375]],
-                     [[678-225,678+225],[-100,375]],
-                     [[1242-225,1242+225],[-100,375]],
-                     [[1920-450,1920],[-100,375]]]
+# --- scale AOIs from the original 1920x1080 layout to current window size
+screenx, screeny = 1280,720 #int(1920/2), int(1080/2)
+
+BASE_W, BASE_H = 1920.0, 1080.0
+sx, sy = screenx / BASE_W, screeny / BASE_H
+
+def sbox(x1, x2, y1, y2):
+    return [[int(x1 * sx), int(x2 * sx)], [int(y1 * sy), int(y2 * sy)]]
+
+# original boxes were for 1920x1080
+target_pos_pixels = [
+    sbox(0, 450, -100, 375),
+    sbox(678 - 225, 678 + 225, -100, 375),
+    sbox(1242 - 225, 1242 + 225, -100, 375),
+    sbox(1920 - 450, 1920, -100, 375),
+]
+
 
 ################################################################################
 
-screenx, screeny = int(1920/2), int(1080/2)
 winsize=[screenx,screeny]
 
 win = visual.Window(winsize, allowGUI=False,color = [-1,-1,-1], fullscr=True,
@@ -142,11 +154,13 @@ draw = ImageDraw.Draw(mask) #This will make a drawable mask, where we draw our c
 
 imageStim = visual.ImageStim(win,blackForeground) # This is our Psychopy imageStim that draws on the window
 
-radius = 180  # circle radius
+radius = int(180 * sy)  # instead of radius = 180
+#radius = 180  # circle radius
 
 i = 0
-x = 960
-y = 540
+x = winsize[0] // 2
+y = winsize[1] // 2
+
 TwoPi360 = 2 * math.pi / 360
 TwoAndAHalfPi360 = 2.5 * math.pi / 360
 width = (( winsize[0] / 2) - radius)
@@ -240,8 +254,8 @@ for n in range(target_pos.shape[0]): #for every sequence
         fixpoints.draw()
         win.flip()
         print('_____________________________________________________________')
-        stimulus1=visual.MovieStim(win, stimuli[n,m,0], size=(screenx, screeny), flipVert=False, flipHoriz=False, loop=False)
-        stimulus2=visual.MovieStim(win, stimuli[n,m,1], size=(screenx, screeny), flipVert=False, flipHoriz=False, loop=False)
+        stimulus1=visual.MovieStim(win, stimuli[n,m,0], size=(screenx, screeny), flipVert=False, flipHoriz=False, loop=False, autoStart=False, noAudio=True)
+        stimulus2=visual.MovieStim(win, stimuli[n,m,1], size=(screenx, screeny), flipVert=False, flipHoriz=False, loop=False, autoStart=False, noAudio=True)
         print("Ready for next trial. Press space when the child is looking")
         core.wait(1)
         event.waitKeys(keyList='space')
@@ -255,7 +269,14 @@ for n in range(target_pos.shape[0]): #for every sequence
             clk = core.getTime()
             played1=0
             played2=0
-            while stimulus1.status != visual.FINISHED:
+
+            # --- start jump clip
+            stimulus1.play()
+            t0 = core.getTime()
+            dur1 = getattr(stimulus1, "duration", 0.0) or 0.0
+            while (not stimulus1.isFinished) and (core.getTime() - t0 < (dur1 + 1.0 if dur1 > 0 else 15.0)):
+            
+            #while not stimulus1.isFinished: #core.getTime() - clk < 3.5: #stimulus1.status != visual.FINISHED:
                 i+=1
                 #print(i)
                 stimulus1.draw()
@@ -280,9 +301,15 @@ for n in range(target_pos.shape[0]): #for every sequence
                     boing = sound.Sound(Path+"Stimuli\\bounce2.wav", stereo=True)
                     boing.play()
                     played2 = 1
-                win.saveMovieFrames('a.jpg', codec='libx264', clearFrames=True)
+                #win.saveMovieFrames('a.jpg', codec='libx264', clearFrames=True)
             i=0        
-                    
+            try:
+                stimulus1.stop()
+                stimulus1.unload()
+            except Exception:
+                pass
+            del stimulus1
+
             ## Interval between jump and reappearance ########################
             if keepitoff==0:
                 torch_on=1
@@ -334,7 +361,7 @@ for n in range(target_pos.shape[0]): #for every sequence
                                     if target_predict_time[-1] - target_predict_time[0] > threshold_reaching_time: #if it happens for at least 500ms, stop waiting and show target
                                             threshold_reached=True # stop the waiting and show the target
                         else: # in the uniform condition, they have to find the trampoline
-                            if x_target_left < x < x_target_right and y_target_up+750 < y < y_target_down+705: #this is the trampoline location
+                            if (x_target_left < x < x_target_right and y_target_up + int(750 * sy) < y < y_target_down + int(705 * sy)):
                                 target_predict_time.append(core.getTime()) # get the time whet that happens
                                 if len(target_predict_time)>1:
                                     if target_predict_time[-1] - target_predict_time[0] > trampoline_reaching_time: #if it happens for at least 500ms, stop waiting and show target
@@ -356,8 +383,8 @@ for n in range(target_pos.shape[0]): #for every sequence
                 imageStim.draw()    # draw to the window
                 fixpoints.draw()
                 win.flip()          # flip the window
-                win.saveMovieFrames('b.jpg', codec='libx264', clearFrames=True)
-                os.remove("b.jpg")
+                #win.saveMovieFrames('b.jpg', codec='libx264', clearFrames=True)
+                #os.remove("b.jpg")
             if m < trials-test_trials: #in familiarization trials, always show the target
                 threshold_reached=True
             if torch_on==0:
@@ -367,7 +394,12 @@ for n in range(target_pos.shape[0]): #for every sequence
             if useEyetracker:
                 trigger = b'wave_'+stimuli[n,m,0].encode('ascii')
                 #CV_LogEvent(b'wave_'+stimuli[n,m,0].encode('ascii'))
-            while stimulus2.status != visual.FINISHED:  #otherwise add time here
+            stimulus2.play()
+            t0b = core.getTime()
+            dur2 = getattr(stimulus2, "duration", 0.0) or 0.0
+            while (not stimulus2.isFinished) and (core.getTime() - t0b < (dur2 + 1.0 if dur2 > 0 else 15.0)):
+
+            #while not stimulus2.isFinished: #core.getTime() - clk2 < 3.5: #stimulus2.status != visual.FINISHED:  #otherwise add time here
                 i+=1
                 if threshold_reached:
                     stimulus2.draw()
@@ -399,10 +431,16 @@ for n in range(target_pos.shape[0]): #for every sequence
                     boing = sound.Sound(sounds[n], stereo=True)
                     boing.play()
                 win.flip()          # flip the window
-                win.saveMovieFrames('a.jpg', codec='libx264', clearFrames=True)
-                os.remove("a.jpg")
+                #win.saveMovieFrames('a.jpg', codec='libx264', clearFrames=True)
+                #os.remove("a.jpg")
             if useEyetracker:
                 trigger = b'end_wave_'+stimuli[n,m,0].encode('ascii')
+            try:
+                stimulus2.stop()
+                stimulus2.unload()
+            except Exception:
+                pass
+            del stimulus2
         except KeyboardInterrupt:
             pass
 

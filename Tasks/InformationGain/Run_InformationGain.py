@@ -166,9 +166,9 @@ DlgQuit = gui.Dlg(title="Press OK to quit")
 
 ##################### Settings ##############################################         
 # Set window size [x,y]
-winsize = [1920/2,1080/2] #Screen from the Tobii
+winsize = 1280,720#[1920/2,1080/2] #Screen from the Tobii
 
-win = visual.Window(winsize, screen=1, fullscr=False, color=(1,1,1), units = 'pix') #monitor="testMonitor" 
+win = visual.Window(winsize, screen=1, fullscr=True, color=(1,1,1), units = 'pix') #monitor="testMonitor" 
 
 # set the target locations, pseudorandomized depending on participant number (location is expressed in a complicated manner just to match exactly the old matlab script)
 targ_loc=np.array([[-(winsize[0]*.8-(winsize[0]/2)), winsize[1]*.8-(winsize[1]/2)],
@@ -200,7 +200,7 @@ for foldername in os.listdir(Path + '\Stimuli\\'):
     for filename in os.listdir(Path + '\Stimuli\\' + foldername):
         os.chdir(Path + '\Stimuli\\' + foldername)
         #heartTarget.append(filename)
-        this_stim.append(visual.ImageStim(win, units= 'pix', size = [200,200], image = filename))
+        this_stim.append(visual.ImageStim(win, units= 'pix', size = [200*winsize[0]/1920,200*winsize[0]/1920], image = filename))
     stimuli[n]=this_stim
     percentage = (n+1)/32*100
     print('Loading %d' % percentage +'%')
@@ -303,22 +303,3 @@ print('Testing session ended')
 
 if timing_issue==1:
     print('ATTENTION: there might be a timing issue. Contact Francesco!')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

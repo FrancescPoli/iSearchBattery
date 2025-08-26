@@ -4,91 +4,20 @@ Created on Tue Nov 17 15:54:37 2020
 
 @author: Hubert Voogd, based on Pillow (PIL) documentation
 """
-
-from psychopy import prefs
-prefs.general['movieLib'] = ['ffpyplayer', 'moviepy']  # harmless; our shim doesn't use it
-prefs.general['audioLib'] = ['pygame']
-
-from psychopy import visual, core, event, sound, gui
-from psychopy.constants import NOT_STARTED, STARTED, FINISHED
-
-from PIL import Image, ImageDraw, ImageEnhance  # , ImageFilter
+from PIL import Image, ImageDraw, ImageEnhance  # ,ImageFilter
 import math
+from psychopy import visual, core, event, sound, gui, prefs  # ,  clock
+# from random import shuffle, randint
 import numpy as np
 import tobii_research as tr
+# import time
+# import win32api
+# import win32con
+# import pywintypes
 import os
 import csv
 
-# --- Drop-in replacement for MovieStim using MoviePy frames (fixed) ---
-from moviepy.editor import VideoFileClip
-
-class MoviePyStim:
-    """Stand-in for visual.MovieStim that streams frames via MoviePy and draws with ImageStim."""
-    def __init__(self, win, filename, size=None, loop=False, noAudio=True,
-                 flipVert=False, flipHoriz=False):
-        self.win = win
-        self.clip = VideoFileClip(filename, audio=not noAudio)
-        self.fps = float(self.clip.fps or 30.0)
-        w, h = self.clip.size
-        if size is None:
-            size = (w, h)
-        self.loop = loop
-        self.flipVert = flipVert
-        self.flipHoriz = flipHoriz
-        self.status = NOT_STARTED
-
-        # iterator/timing
-        self._iter = None
-        self._next_t = 0.0
-        self._clock = core.Clock()
-
-        # ImageStim that we update each draw; you can still draw other stims over it
-        self._img = visual.ImageStim(
-            self.win,
-            image=np.zeros((h, w, 3), dtype=np.uint8),
-            size=size,
-            flipVert=self.flipVert,
-            flipHoriz=self.flipHoriz,
-        )
-
-    def _start(self):
-        self._iter = self.clip.iter_frames(fps=self.fps, dtype='uint8')
-        self._clock.reset()
-        self._next_t = 0.0
-        self.status = STARTED
-
-    def draw(self):
-        if self.status == FINISHED:
-            return
-        if self.status == NOT_STARTED:
-            self._start()
-
-        now = self._clock.getTime()
-        if now >= self._next_t:
-            try:
-                frame = next(self._iter)  # (h, w, 3) uint8 RGB
-                self._img.image = frame
-                self._next_t += 1.0 / self.fps
-            except StopIteration:
-                if self.loop:
-                    self._start()
-                    frame = next(self._iter)
-                    self._img.image = frame
-                    self._next_t = 1.0 / self.fps
-                else:
-                    self.status = FINISHED
-                    return
-        self._img.draw()
-
-    def close(self):
-        try:
-            self.clip.close()
-        except Exception:
-            pass
-# --- end MoviePyStim ---
-
-
-useEyetracker = False  # TRUE WHEN AT THE LAB!
+useEyetracker = True  # TRUE WHEN AT THE LAB!
 
 Path = r"C:\Users\itali\Documents\iSearchBattery\Tasks\Torchlight\\"
 ################## Initial set up for stimuli #################################
@@ -98,8 +27,10 @@ set_test_duration = 10
 threshold_reaching_time = 0.2  # seconds of continuous looking to correct location
 trampoline_reaching_time = 0.150
 fixation_torch = 0.5  # How long the torch appears for before subject has control on it
-
+# in skewed condition, when infants look at target location the target is shown
+# in uniform codnition, when infants look at correct trampoline location AND then at correct target location, target is shown
 # specify darkness of each trial
+dark = [1, 0.3, 0.2, 0.15, 0.12, 0.09, 0.06, 0.03, 0, 0, 0, 0]
 dark = [0.3, 0.25, 0.2, 0.15, 0.12, 0.09, 0.06, 0.03, 0, 0, 0, 0]
 trials = 12
 test_trials = 4
@@ -135,19 +66,18 @@ target_pos_pixels = [[[0, 450], [-100, 375]],
 
 ################################################################################
 
-screenx, screeny = int(1920 / 2), int(1080 / 2)
+screenx, screeny = 1280, 720  # int(1920/2), int(1080/2)
 winsize = [screenx, screeny]
 
-win = visual.Window(
-    winsize, allowGUI=False, color=[-1, -1, -1], fullscr=False,
-    screen=1, monitor='testMonitor', units='pix', waitBlanking=False
-)
+# prefer ffpyplayer first (helps on Windows)
+prefs.general['movieLib'] = ['ffpyplayer', 'opencv']
+
+win = visual.Window(winsize, allowGUI=False, color=[-1, -1, -1], fullscr=True,
+                    screen=1, monitor='testMonitor', units='pix', waitBlanking=False)
 
 # FUNCTIONS
 # Function to collect when the spacebar has been pressed
 keepitoff = 0
-
-
 def get_bar():
     global keepitoff
     keys = event.getKeys()  # record whether a key is pressed
@@ -158,10 +88,11 @@ def get_bar():
     elif 'q' in keys:  # if the key is q (for quit), end recording and stimulus presentation
         if useEyetracker:
             eyetrackers[0].unsubscribe_from(tr.EYETRACKER_GAZE_DATA, gaze_data_callback)
+            # CV_Stop()
+            # CV_Close()
         win.close()
         core.quit()
         print('Testing session ended')
-
 
 # Function to determine where participant is looking
 newleft_x = -1
@@ -169,10 +100,9 @@ newleft_y = -1
 newright_x = -1
 newright_y = -1
 trigger = []
-
-
 def gaze_data_callback(gaze_data):
     global newleft_x, newleft_y, newright_x, newright_y, trigger
+    # startT = time.time()
     newleft_x = gaze_data.get('left_gaze_point_on_display_area')[0]
     newleft_y = gaze_data.get('left_gaze_point_on_display_area')[1]
     newright_x = gaze_data.get('right_gaze_point_on_display_area')[0]
@@ -183,7 +113,7 @@ def gaze_data_callback(gaze_data):
     else:
         gaze_data['triggers'] = trigger
         trigger = []
-    if not os.path.isfile(output_file):
+    if (not os.path.isfile(output_file)):
         with open(output_file, 'w+', newline='') as f:
             w = csv.DictWriter(f, gaze_data.keys())
             w.writeheader()
@@ -194,15 +124,13 @@ def gaze_data_callback(gaze_data):
             w.writerow(gaze_data)
     return ()
 
-
 eyetrackers = tr.find_all_eyetrackers()
 
-blackForeground = Image.new("RGB", (screenx, screeny), (1, 1, 1))  # This is the foreground image... a black surface
-
+# (your original PIL surfaces; kept as requested)
+blackForeground = Image.new("RGB", (screenx, screeny), (1, 1, 1))
 mask = Image.new("L", (screenx, screeny), 0)
-draw = ImageDraw.Draw(mask)  # This will make a drawable mask, where we draw our circle on.
-
-imageStim = visual.ImageStim(win, blackForeground)  # This is our PsychoPy ImageStim that draws on the window
+draw = ImageDraw.Draw(mask)
+imageStim = visual.ImageStim(win, blackForeground)
 
 radius = 180  # circle radius
 
@@ -221,24 +149,25 @@ xs = [np.nan, np.nan]  # initialize vector for x
 ys = [np.nan, np.nan]  # initialize vector for y
 
 # load sounds
+prefs.general['audioLib'] = ['pygame']
 sounds = np.zeros(4, dtype=object)
-sounds[0] = Path + 'Stimuli\\woopey_elephant.wav'
-sounds[1] = Path + 'Stimuli\\woopey_giraffe.wav'
-sounds[2] = Path + 'Stimuli\\woopey_lion.wav'
-sounds[3] = Path + 'Stimuli\\woopey_zebra.wav'
+sounds[0] = Path + 'Stimuli\woopey_elephant.wav'
+sounds[1] = Path + 'Stimuli\woopey_giraffe.wav'
+sounds[2] = Path + 'Stimuli\woopey_lion.wav'
+sounds[3] = Path + 'Stimuli\woopey_zebra.wav'
 
 # Load videos
 stimuli = np.zeros([4, trials, 2], dtype=object)  # there are 12 trials for each of the 4 animals, 2 videos for each trial
 n = -1
-for foldername in os.listdir(Path + 'Stimuli\\Stimuli1'):
+for foldername in os.listdir(Path + 'Stimuli\Stimuli1'):
     n += 1  # animal count
     m = -1  # location count
     for t_pos in target_pos[n, :]:
-        for filename in os.listdir(Path + 'Stimuli\\Stimuli1\\' + foldername):
+        for filename in os.listdir(Path + 'Stimuli\Stimuli1\\' + foldername):
             if str(t_pos) in filename:
                 m += 1
-                stimuli[n, m, 0] = Path + 'Stimuli\\Stimuli1\\' + foldername + '\\' + filename
-                stimuli[n, m, 1] = Path + 'Stimuli\\Stimuli2\\' + foldername + '\\' + filename[0:-5] + 'b.mp4'
+                stimuli[n, m, 0] = Path + 'Stimuli\Stimuli1\\' + foldername + '\\' + filename
+                stimuli[n, m, 1] = Path + 'Stimuli\Stimuli2\\' + foldername + '\\' + filename[0:-5] + 'b.mp4'
 
 # Load background image
 os.chdir(Path + "Stimuli")
@@ -258,8 +187,10 @@ isi[3] = visual.ImageStim(win, units='pix', size=winsize, image='background_open
 
 # HERE STARTS THE RECORDING!
 if useEyetracker:
-    output_file = Path + 'Data\\infant' + str(int(subjnum)) + '.csv'
+    # CV_Start()
+    output_file = Path + 'Data\infant' + str(int(subjnum)) + '.csv'
     eyetrackers[0].subscribe_to(tr.EYETRACKER_GAZE_DATA, gaze_data_callback, as_dictionary=True)
+    # FROM THIS MOMENT ON: newleft and newright are constantly updated
 core.wait(1)
 
 for n in range(target_pos.shape[0]):  # for every sequence
@@ -290,11 +221,28 @@ for n in range(target_pos.shape[0]):  # for every sequence
         win.flip()
         print('_____________________________________________________________')
 
-        # --- Use MoviePyStim instead of MovieStim3
-        stimulus1 = MoviePyStim(win, stimuli[n, m, 0], size=(screenx, screeny),
-                                noAudio=True, flipVert=False, flipHoriz=False, loop=False)
-        stimulus2 = MoviePyStim(win, stimuli[n, m, 1], size=(screenx, screeny),
-                                noAudio=True, flipVert=False, flipHoriz=False, loop=False)
+        # --- create MovieStims with audio disabled; fallback for older PsychoPy
+        try:
+            stimulus1 = visual.MovieStim(
+                win, stimuli[n, m, 0], size=(screenx, screeny),
+                flipVert=False, flipHoriz=False, loop=False, noAudio=True
+            )
+        except TypeError:
+            stimulus1 = visual.MovieStim(
+                win, stimuli[n, m, 0], size=(screenx, screeny),
+                flipVert=False, flipHoriz=False, loop=False, audio=False
+            )
+
+        try:
+            stimulus2 = visual.MovieStim(
+                win, stimuli[n, m, 1], size=(screenx, screeny),
+                flipVert=False, flipHoriz=False, loop=False, noAudio=True
+            )
+        except TypeError:
+            stimulus2 = visual.MovieStim(
+                win, stimuli[n, m, 1], size=(screenx, screeny),
+                flipVert=False, flipHoriz=False, loop=False, audio=False
+            )
 
         print("Ready for next trial. Press space when the child is looking")
         core.wait(1)
@@ -309,20 +257,24 @@ for n in range(target_pos.shape[0]):  # for every sequence
             clk = core.getTime()
             played1 = 0
             played2 = 0
-            while stimulus1.status != FINISHED:
+
+            # explicitly play and use FINISHED, with a timeout guard
+            stimulus1.play()
+            t_start_jump = core.getTime()
+            dur1 = stimulus1.duration or 0.0
+            timeout1 = max(dur1 + 2.0, 15.0)
+
+            while (stimulus1.status != visual.FINISHED) and (core.getTime() - t_start_jump < timeout1):
                 i += 1
                 stimulus1.draw()
-
-                # capture backbuffer, apply brightness/mask, draw overlays
                 im1 = win.getMovieFrame(buffer='back')
                 enhancer = ImageEnhance.Brightness(im1)
-                factor = dark[m]  # changes across trials
+                factor = dark[m]
                 im2 = enhancer.enhance(factor)
-                imageStim.image = im2  # resulting image in ImageStim
+                imageStim.image = im2
                 imageStim.draw()
                 fixpoints.draw()
-
-                win.flip()  # flip the window
+                win.flip()
                 get_bar()
                 if i == 1:
                     boing = sound.Sound(Path + "Stimuli\\treasure.wav", stereo=True)
@@ -336,6 +288,9 @@ for n in range(target_pos.shape[0]):  # for every sequence
                     boing.play()
                     played2 = 1
 
+            if stimulus1.status != visual.FINISHED:
+                print("WARNING: jump movie timed out; continuing.")
+            stimulus1.stop()
             i = 0
 
             ## Interval between jump and reappearance ########################
@@ -346,22 +301,20 @@ for n in range(target_pos.shape[0]):  # for every sequence
                     trigger = b'torch_' + stimuli[n, m, 0].encode('ascii')
                 else:
                     trigger = b'no-torch_' + stimuli[n, m, 0].encode('ascii')
-
             isi_start = core.getTime()
             while isi_start > core.getTime() - duration and not threshold_reached:
                 # add circle to bg
                 isi[target_pos[n, m]].draw()
                 im1 = win.getMovieFrame(buffer='back')
                 enhancer = ImageEnhance.Brightness(im1)
-                factor = dark[m]  # this will change across trials
+                factor = dark[m]
                 im2 = enhancer.enhance(factor)
-                draw.bitmap((0, 0), mask)  # clear the circle
-
+                draw.bitmap((0, 0), mask)  # clear the circle (kept as in your code)
                 xs = [np.nan, np.nan]  # initialize vector for x
                 ys = [np.nan, np.nan]  # initialize vector for y
                 if newright_x + newright_y > -1 or newleft_x + newleft_y > -1:
-                    xs.append(np.nanmean([newleft_x, newright_x]) * winsize[0])  # get x value
-                    ys.append(np.nanmean([newleft_y, newright_y]) * winsize[1])  # get y value
+                    xs.append(np.nanmean([newleft_x, newright_x]) * winsize[0])
+                    ys.append(np.nanmean([newleft_y, newright_y]) * winsize[1])
                     xs = xs[1:]
                     ys = ys[1:]
                     x = np.nanmean(xs)  # a fixation filter will be used instead of this line
@@ -370,32 +323,32 @@ for n in range(target_pos.shape[0]):  # for every sequence
                 draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=255)  # draw the circle
                 get_bar()
                 if torch_on:
-                    im = Image.composite(im1, im2, mask)  # im1 inside circle, blurred outside
+                    im = Image.composite(im1, im2, mask)  # spotlight composite
                 else:
                     im = im1
 
                 if core.getTime() >= isi_start + fixation_torch and torch_on:
-                    # gaze contingent logic
+                    # ADD here that character appears only when looking at correct spot:
                     if m >= trials - test_trials:  # only for the test trials
-                        if skewed[n] == 1 or trampoline_reached:
+                        # if they look at correct location
+                        if skewed[n] == 1 or trampoline_reached:  # comment out trampoline_reached==True if trampoline threshold is enough for uniform
                             if x_target_left < x < x_target_right and y_target_up < y < y_target_down:
-                                target_predict_time.append(core.getTime())
+                                target_predict_time.append(core.getTime())  # get the time whet that happens
                                 if len(target_predict_time) > 1:
-                                    if target_predict_time[-1] - target_predict_time[0] > threshold_reaching_time:
-                                        threshold_reached = True
-                        else:  # uniform: find trampoline first
-                            if (x_target_left < x < x_target_right and
-                                y_target_up + 750 < y < y_target_down + 705):
+                                    if target_predict_time[-1] - target_predict_time[0] > threshold_reaching_time:  # at least 500ms
+                                        threshold_reached = True  # stop the waiting and show the target
+                        else:  # in the uniform condition, they have to find the trampoline
+                            if x_target_left < x < x_target_right and y_target_up + 750 < y < y_target_down + 705:  # trampoline location
                                 target_predict_time.append(core.getTime())
                                 if len(target_predict_time) > 1:
                                     if target_predict_time[-1] - target_predict_time[0] > trampoline_reaching_time:
-                                        trampoline_reached = True
+                                        trampoline_reached = True  # found trampoline; ISI continues as in skewed
                                         target_predict_time = []
 
-                imageStim.image = im  # set the resulting image in ImageStim
+                imageStim.image = im  # set the resulting image in the visual.ImageStim
                 imageStim.draw()      # draw to the window
                 fixpoints.draw()
-                win.flip()            # flip the window
+                win.flip()
 
             if m < trials - test_trials:  # in familiarization trials, always show the target
                 threshold_reached = True
@@ -406,7 +359,12 @@ for n in range(target_pos.shape[0]):  # for every sequence
             if useEyetracker:
                 trigger = b'wave_' + stimuli[n, m, 0].encode('ascii')
 
-            while stimulus2.status != FINISHED:  # otherwise add time here
+            stimulus2.play()
+            t_start_wave = core.getTime()
+            dur2 = stimulus2.duration or 0.0
+            timeout2 = max(dur2 + 2.0, 15.0)
+
+            while (stimulus2.status != visual.FINISHED) and (core.getTime() - t_start_wave < timeout2):  # otherwise add time here
                 i += 1
                 if threshold_reached:
                     stimulus2.draw()
@@ -416,45 +374,44 @@ for n in range(target_pos.shape[0]):  # for every sequence
 
                 im1 = win.getMovieFrame(buffer='back')
                 enhancer = ImageEnhance.Brightness(im1)
-                factor = dark[m]  # this will change across trials
+                factor = dark[m]
                 im2 = enhancer.enhance(factor)
                 draw.bitmap((0, 0), mask)  # clear the circle
                 if newright_x + newright_y > -1 or newleft_x + newleft_y > -1:
-                    xs.append(np.nanmean([newleft_x, newright_x]) * winsize[0])  # get x value
-                    ys.append(np.nanmean([newleft_y, newright_y]) * winsize[1])  # get y value
+                    xs.append(np.nanmean([newleft_x, newright_x]) * winsize[0])
+                    ys.append(np.nanmean([newleft_y, newright_y]) * winsize[1])
                     xs = xs[1:]
                     ys = ys[1:]
-                    x = np.nanmean(xs)  # a fixation filter will be used instead of this line
+                    x = np.nanmean(xs)
                     y = np.nanmean(ys)
-                draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=255)  # draw the circle
+
+                draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=255)
                 get_bar()
                 if torch_on:
                     imageStim.image = Image.composite(im1, im2, mask)
                 else:
                     imageStim.image = im1
-                imageStim.draw()    # draw to the window
+                imageStim.draw()
                 fixpoints.draw()
                 if i == 1:
                     boing = sound.Sound(sounds[n], stereo=True)
                     boing.play()
-                win.flip()          # flip the window
+                win.flip()
+
+            if stimulus2.status != visual.FINISHED:
+                print("WARNING: wave movie timed out; continuing.")
+            stimulus2.stop()
 
             if useEyetracker:
                 trigger = b'end_wave_' + stimuli[n, m, 0].encode('ascii')
-
-            # clean up per trial
-            try:
-                stimulus1.close()
-                stimulus2.close()
-            except Exception:
-                pass
-
         except KeyboardInterrupt:
             pass
 
 # Stop Eyetracker
 if useEyetracker:
     eyetrackers[0].unsubscribe_from(tr.EYETRACKER_GAZE_DATA, gaze_data_callback)
+    # CV_Stop()
+    # CV_Close()
 
 win.close()
 core.quit()
