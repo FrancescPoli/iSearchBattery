@@ -27,9 +27,9 @@ screenx, screeny = 1280, 720
 n_locations = 4
 total_n_stimuli = 50
 center = (0,0)
-box_size = [250,250]
-fixback_size = [500,500]
-target_size = [250,250]
+box_size = [250*screenx/1920,250*screenx/1920]
+fixback_size = [500*screenx/1920,500*screenx/1920]
+target_size = [250*screenx/1920,250]
 threshold_time=0.07
 fail_time=3
 fix_time = random.uniform(1.5,3)
@@ -40,7 +40,7 @@ fix_time = random.uniform(1.5,3)
 # equidistant positions within these 4 corners (up left, up right, down left, down right)
 n_x = 2
 n_y = 2
-corners = [[300,screenx-300],[200,screeny-200]] #2x 2y
+corners = [[300*screenx/1920,screenx-(300*screenx/1920)],[200*screenx/1920,screeny-(200*screenx/1920)]] #2x 2y
 
 
 ## this function starts from number of corners and number of aois required to 
@@ -56,10 +56,10 @@ def equidistant_aois(n_x, n_y, corners):
 
     
 aoi_centers = equidistant_aois(n_x, n_y, corners) #the position for the four corners can be called by  aoi_centers[] inside should be the location index
-aoi_side_length = 250
+aoi_side_length = 250*screenx/1920
     
-aoi_centers_test = [[480,540],[1440,540]]
-aoi_side_test = 250
+aoi_centers_test = [[480*screenx/1920,540*screenx/1920],[1440*screenx/1920,540*screenx/1920]]
+aoi_side_test = 250*screenx/1920
 
 ################## Initial set up for eye-tracker #############################
 useEyetracker = True #TRUE WHEN AT THE LAB!

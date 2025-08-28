@@ -78,7 +78,7 @@ task_paths = {
 
 
 try:
-    folder_name, module_name = task_paths[Task]
+    folder_name, module_name = task_paths[Task] 
 
     # Add the folder to sys.path if not already
     folder_path = os.path.join(os.path.dirname(__file__), folder_name)

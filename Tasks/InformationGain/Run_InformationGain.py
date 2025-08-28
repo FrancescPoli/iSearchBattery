@@ -71,6 +71,9 @@ def get_bar():
         DlgQuit.show()  # show dialog and wait for OK or Cancel
         if DlgQuit.OK: 
             hothothot.stop()
+            #Stop Eyetracker
+            if useEyetracker:
+                eyetrackers[0].unsubscribe_from(tr.EYETRACKER_GAZE_DATA, gaze_data_callback)
             show_end()
             win.close()
             core.quit()
