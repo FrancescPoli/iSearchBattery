@@ -12,7 +12,6 @@ import time
 
 ################## Pop-up window to choose participant and task ########################
 
-
 GUI_off = False
 while GUI_off == False:
     myDlg = gui.Dlg(title="CEAL_Battery")
