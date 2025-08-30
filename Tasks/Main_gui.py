@@ -1,4 +1,3 @@
-
 from psychopy import visual, core, event, sound, gui, prefs
 import sys, importlib
 import math
