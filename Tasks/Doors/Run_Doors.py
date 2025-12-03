@@ -18,7 +18,7 @@ import time
 # CHANGE THE PATH!!!!
 Path = r"C:\Users\itali\Documents\iSearchBattery\Tasks\Doors\\" 
 
-Path = r"C:\\Users\\Yi-LinL\\OneDrive - Central European University\\Apps\\Doors\\Follow-up_stim\\" 
+#Path = r"C:\\Users\\Yi-LinL\\OneDrive - Central European University\\Apps\\Doors\\Follow-up_stim\\" 
 ################## Initial set up for stimuli #################################
 
 screenx, screeny = 1280, 720
@@ -35,7 +35,7 @@ max_duration = 60*5
 
 threshold_time = .5
 #animal_size = [250, 250]
-feed_size = [200, 200]
+feed_size = [100, 100]
 # actual size = 881x1007
 door_x = 661
 door_size = [door_x,door_x]
@@ -126,9 +126,7 @@ order_index = (subjnum - 1) % 8   # 0..3
 if n_block == 2:
     order_index += 8              # shift to second half of table
     
-    
-subjnum=111
-n_block=1
+
 
 row = counterbalance.iloc[order_index]
 n_stimuli = row["stimuli"]
@@ -289,7 +287,7 @@ if useEyetracker:
 background.draw()
 win.flip()
 #music.play()
-print('\n\n=========================== Press SPACE to start ===========================')
+print('\n\n=========================== Press SPACE to start fam ===========================')
 event.waitKeys(keyList='space')
 
 trigger = 'start_task_n_block' + str(n_block) + '_condition_' + str(n_stimuli) + '_object_' + str(objects_cond) + '_first_' + str(toy_first)
@@ -303,7 +301,7 @@ win.flip()
 audio_look.play()
 core.wait(stimuli_time)
 audio_look.stop()
-print('\n\n=========================== Press SPACE to continue ===========================')
+print('\n\n=========================== Press SPACE to show doors ===========================')
 event.waitKeys(keyList='space')
 # 
 background.draw()
@@ -318,9 +316,9 @@ background.draw()
 outcome_stim.draw()
 win.flip()
 feed_music.play()
-core.wait(3)
+core.wait(2)
 feed_music.stop()
-print('\n\n=========================== Press SPACE to continue ===========================')
+print('\n\n=========================== Press SPACE to start test ===========================')
 event.waitKeys(keyList='space')
 
 trigger = 'start_trial' + '_condition_' + str(n_stimuli) + '_object_' + str(objects_cond) + '_first_' + str(toy_first)
