@@ -17,11 +17,12 @@ import time
 
 # CHANGE THE PATH!!!!
 Path = r"C:\Users\itali\Documents\iSearchBattery\Tasks\Doors\\" 
+
+Path = r"C:\\Users\\Yi-LinL\\OneDrive - Central European University\\Apps\\Doors\\Follow-up_stim\\" 
 ################## Initial set up for stimuli #################################
 
 screenx, screeny = 1280, 720
 
-total_n_stimuli = 8 #old n_locations 
 n_trials = 100
 closed_time = 1
 open_time = 3
@@ -32,14 +33,11 @@ wait_time_closed_door = 1
 max_duration = 60*5
 
 
-cond = [[1,total_n_stimuli], # 0 for 1 animal; 1 for many. # animal cond
-        [1,total_n_stimuli]] #                             # toy cond
-
 threshold_time = .5
-animal_size = [250, 250]
+#animal_size = [250, 250]
 feed_size = [200, 200]
 # actual size = 881x1007
-door_x = 600
+door_x = 661
 door_size = [door_x,door_x]
 
 
@@ -49,23 +47,23 @@ center = (0,0)
 
 # to find the positions of the aois, we set 4 corners and then we can look for 
 # equidistant positions within these 4 corners (up left, up right, down left, down right)
-n_x = 4
-n_y = 2
-corners = [[200,screenx-200],[160,screeny-160]]
+#n_x = 4
+#n_y = 2
+#corners = [[200,screenx-200],[160,screeny-160]]
 ## this function starts from number of corners and number of aois required to 
 ## return equidistant aois:
-def equidistant_aois(n_x, n_y, corners):
-    aois=[]
-    proportion_x = np.linspace(corners[0][0],corners[0][1],n_x)
-    proportion_y = np.linspace(corners[1][0],corners[1][1],n_y)
-    for this_n_y in range(n_y):
-        for this_n_x in range(n_x):
-            aois.append([proportion_x[this_n_x], proportion_y[this_n_y]])
-    return(aois)
+#def equidistant_aois(n_x, n_y, corners):
+#    aois=[]
+#    proportion_x = np.linspace(corners[0][0],corners[0][1],n_x)
+#    proportion_y = np.linspace(corners[1][0],corners[1][1],n_y)
+#    for this_n_y in range(n_y):
+#        for this_n_x in range(n_x):
+#            aois.append([proportion_x[this_n_x], proportion_y[this_n_y]])
+#    return(aois)
 
 
 
-start_trial_centers = equidistant_aois(n_x, n_y, corners)
+#start_trial_centers = equidistant_aois(n_x, n_y, corners)
 
 # assuming door is in the centre, the limits of aoi are:
 x_left = -door_size[0]/2*1.1 + screenx/2
@@ -86,10 +84,13 @@ ys = [np.nan]*FilterSize
 
 ################## Pop-up window to choose participant ########################
 counterbalance = pd.DataFrame({
-    "order": [1,2,3,4,5,6,7,8],
-    "block":   [1,1,1,1,2,2,2,2],
-    "stimuli": [1,8,1,8,8,1,8,1],
-    "animals": [0,0,1,1,1,1,0,0]
+    "order": [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16], #1--open_door_h_star, toy_open_door_L_star;
+    #2--open_door_L_star, toy_open_door_h_star; 3--open_door_h_moon,toy_open_door_L_moon;
+    #4--open_door_L_moon,toy_open_door_h_moon
+    "block":   [1,1,1,1,2,2,2,2,1,1,1,1,2,2,2,2],
+    "stimuli": [5,9,5,9,9,5,9,5,5,9,5,9,9,5,9,5], #5--high, 9--low
+    "stars": [0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1],#0--star is purple, 1-- moon is purple
+    "toy_first": [0,0,0,0,1,1,1,1,1,1,1,1, 0,0,0,0]
 })
 
 # =========================
@@ -120,14 +121,19 @@ subjnum = Subject
 # =========================
 # Assign condition from table
 # =========================
-# Cycle subject numbers through the 4 orders
-order_index = (subjnum - 1) % 4   # 0..3
+# Cycle subject numbers through the 8 orders
+order_index = (subjnum - 1) % 8   # 0..3
 if n_block == 2:
-    order_index += 4              # shift to second half of table
+    order_index += 8              # shift to second half of table
+    
+    
+subjnum=111
+n_block=1
 
 row = counterbalance.iloc[order_index]
 n_stimuli = row["stimuli"]
-toys_cond = row["animals"]
+objects_cond = row["stars"]
+toy_first = row["toy_first"]
 
 
 
@@ -186,32 +192,22 @@ def gaze_data_callback(gaze_data):
 ############################## LOAD STIMULI ###################################
 # sound
 prefs.general['audioLib'] = ['pygame']
-#music = sound.Sound(Path+"Stimuli\\hothothot.wav", stereo=True)
-if toys_cond == 0:
-    audio1=sound.Sound(Path+"Stimuli\Audios\\animal1it.wav", stereo=True)
-    #audio2=sound.Sound(Path+"Stimuli\Audios\\Animal2.wav", stereo=True)
-    audio3=sound.Sound(Path+"Stimuli\Audios\\animal2it.wav", stereo=True)
 
-elif toys_cond == 1:
-    audio1=sound.Sound(Path+"Stimuli\Audios\\toy1it.wav", stereo=True)
-    #audio2=sound.Sound(Path+"Stimuli\Audios\\Toy2.wav", stereo=True)
-    audio3=sound.Sound(Path+"Stimuli\Audios\\toy2it.wav", stereo=True)
 
-feed_music=sound.Sound(Path+"Stimuli\Audios\\sound.wav", stereo=True)
-#fixation
-#fixation = visual.ShapeStim(win, 
-    #vertices=((0, -2.0), (0, 2.0), (0,0), (-2.0,0), (2.0, 0)),
-    #lineWidth=20,
-    #closeShape=False,
-    #lineColor="black")
+feed_music=sound.Sound(Path+"Stimuli\\sound.wav", stereo=True)
 
+audio_look=sound.Sound(Path+"Stimuli\\sound.wav", stereo=True)
 
 #Load background image and door images
 os.chdir(Path+"Stimuli")
 
 background=visual.ImageStim(win, units= 'pix', size = winsize, image = 'background.png')
 
-if toys_cond == 0:
+if toy_first == 0:
+    fam_stim = visual.ImageStim(win, units= 'pix', size = door_size, image = 'open_door_fam.png')
+    outcome_stim = visual.ImageStim(win, units= 'pix', size = door_size, image = 'open_door_fam_out.png')
+    
+    
     fixation = visual.ImageStim(win, units= 'pix', size = door_size, image = 'fix.png')
     closed_door=visual.ImageStim(win, units= 'pix', size = door_size, image = 'Doors\\closed_door.png')
     closed_door.pos = door_center
@@ -219,7 +215,10 @@ if toys_cond == 0:
     open_door=visual.ImageStim(win, units= 'pix', size = door_size, image = 'Doors\\open_door.png')
     open_door.pos = door_center
 
-elif toys_cond == 1:
+elif toy_first == 1:
+    fam_stim = visual.ImageStim(win, units= 'pix', size = door_size, image = 'toy_open_door_fam.png')
+    outcome_stim = visual.ImageStim(win, units= 'pix', size = door_size, image = 'toy_open_door_fam_out.png')
+    
     fixation = visual.ImageStim(win, units= 'pix', size = door_size, image = 'fix_toy.png')
     closed_door=visual.ImageStim(win, units= 'pix', size = door_size, image = 'Doors\\toy_closed_door.png')
     closed_door.pos = door_center
@@ -229,78 +228,51 @@ elif toys_cond == 1:
 
 
 
-# import animals
+stim_table = {
+    0: {  # star purple
+        5: {  # high
+            0: "open_door_h_star.png",
+            1: "toy_open_door_h_star.png"
+        },
+        9: {  # low
+            0: "open_door_L_star.png",
+            1: "toy_open_door_L_star.png"
+        }
+    },
+    1: {  # moon purple
+        5: {
+            0: "open_door_h_moon.png",
+            1: "toy_open_door_h_moon.png"
+        },
+        9: {
+            0: "open_door_L_moon.png",
+            1: "toy_open_door_L_moon.png"
+        }
+    }
+}
 
-# initialize array 
-animal_stim=np.zeros(total_n_stimuli,dtype=object)
-# initialize for second loop:
-shuffle_idx = np.random.choice(range(0,total_n_stimuli), size = total_n_stimuli, replace=False)
-# shuffle_idx contains numbers between 0 and 8 in random order
 
-# import filenames animals
-filename_list = []
-for filename in os.listdir(Path+r"Stimuli\Animals\\"):  
-    if 'png' in filename:
-        filename_list.append(filename)
+# =========================
+# Load object stimulus (based on 3-factor condition)
+# =========================
+stim_file = stim_table[objects_cond][n_stimuli][toy_first]
 
-if toys_cond == 0:
-    if n_stimuli == 1:
-    # randomly select one number between 0 and 8    
-        stimulus_idx = int(np.random.choice(range(0,len(filename_list)), size = 1))
-    
-    # import 8 times the same stimulus            
-        for x in range(total_n_stimuli):
-            animal_stim[x]=visual.ImageStim(win, units= 'pix', size = animal_size, image = r'Animals\\' + filename_list[stimulus_idx])
-            animal_stim[x].pos = (start_trial_centers[x][0]-screenx/2, screeny/2 -start_trial_centers[x][1])
-        
-        animal_feed = visual.ImageStim(win, units= 'pix', size = feed_size, image = r'Animals\\' + filename_list[stimulus_idx])
-        animal_feed.pos = center
-        
-    elif n_stimuli == 8: #if we start with 8 animals or 1 toy
-        for filename, n in zip(filename_list, shuffle_idx):   
-            animal_stim[n]=visual.ImageStim(win, units= 'pix', size = animal_size, image = r'Animals\\'+ filename)
-            animal_stim[n].pos = (start_trial_centers[n][0]-screenx/2, screeny/2 -start_trial_centers[n][1])
-        
-        animal_feed = visual.ImageStim(win, units= 'pix', size = feed_size, image = r'Animals\\'+ filename)
-        animal_feed.pos = center
-    else:
-        raise Exception('wrong number. Please insert a valid number')
-        
+objects_stim = visual.ImageStim(
+    win, units='pix', size=door_size, image=stim_file
+)
 
-# import toys
-toy_stim=np.zeros(total_n_stimuli,dtype=object)
-# initialize for second loop:
-shuffle_idx = np.random.choice(range(0,total_n_stimuli), size = total_n_stimuli, replace=False)
-# shuffle_idx contains numbers between 0 and 8 in random order
-# import filenames toys
-filename_list = []
-for filename in os.listdir(Path+r"Stimuli\Toys\\"):  
-    if 'png' in filename:
-        filename_list.append(filename)
+target_variants = {
+    0: ["star_p.png", "moon_b.png"],  # star purple condition
+    1: ["moon_p.png", "star_b.png"]   # moon purple condition
+}
 
-# decide whether to import one or eight animals
-if toys_cond == 1: #if we start with one animal or 8 toys
-    if n_stimuli == 1:
-    # randomly select one number between 0 and 8    
-        stimulus_idx = int(np.random.choice(range(0,len(filename_list)), size = 1))
-    
-    # import 8 times the same stimulus            
-        for x in range(total_n_stimuli):
-            toy_stim[x]=visual.ImageStim(win, units= 'pix', size = animal_size, image = r'Toys\\' + filename_list[stimulus_idx])
-            toy_stim[x].pos = (start_trial_centers[x][0]-screenx/2, screeny/2 -start_trial_centers[x][1])
-        
-        toy_feed=visual.ImageStim(win, units= 'pix', size = feed_size, image = r'Toys\\' + filename_list[stimulus_idx])
-        toy_feed.pos = center
+# randomly pick target based on objects_cond
+chosen_file = random.choice(target_variants[objects_cond])
 
-    elif n_stimuli == 8:
-        for filename, n in zip(filename_list, shuffle_idx):   
-            toy_stim[n]=visual.ImageStim(win, units= 'pix', size = animal_size, image = r'Toys\\'+ filename)
-            toy_stim[n].pos = (start_trial_centers[n][0]-screenx/2, screeny/2 -start_trial_centers[n][1])
-        
-        toy_feed=visual.ImageStim(win, units= 'pix', size = feed_size, image = r'Toys\\'+ filename)
-        toy_feed.pos = center
-    else:
-        raise Exception('wrong number. Please insert a valid number')
+target_stim = visual.ImageStim(
+    win, units='pix', size=feed_size, image=chosen_file
+)
+
 
 
 
@@ -308,20 +280,9 @@ if toys_cond == 1: #if we start with one animal or 8 toys
 ######################## HERE STARTS THE RECORDING! ###########################
 if useEyetracker:
     #CV_Start()
-    output_file = Path+'Data\\infant' + str(int(subjnum)) + '_' + str(int(n_block)) + '_' + str(int(n_stimuli)) + '_' + str(int(toys_cond)) + '.csv'
+    output_file = Path+'Data\\infant' + str(int(subjnum)) + '_' + str(int(n_block)) + '_' + str(int(n_stimuli)) + '_' + str(int(objects_cond))+ '_' + str(int(toy_first)) + '.csv'
     eyetrackers[0].subscribe_to(tr.EYETRACKER_GAZE_DATA,gaze_data_callback, as_dictionary=True)
     # FROM THIS MOMENT ON: newleft and newright are constantly updated
-
-if toys_cond == 1:
-    stimuli = toy_stim
-elif toys_cond == 0:
-    stimuli = animal_stim
-    
-
-if toys_cond == 1:
-    feedback = toy_feed
-elif toys_cond == 0:
-    feedback = animal_feed
 
 
 # show background:
@@ -331,16 +292,17 @@ win.flip()
 print('\n\n=========================== Press SPACE to start ===========================')
 event.waitKeys(keyList='space')
 
-trigger = 'start_task_n_block' + str(n_block) + '_n_stimuli_' + str(n_stimuli) + '_condition_' + str(toys_cond)
+trigger = 'start_task_n_block' + str(n_block) + '_condition_' + str(n_stimuli) + '_object_' + str(objects_cond) + '_first_' + str(toy_first)
 
 # show 8 stimuli (either identical or different) for 3s
 background.draw()
-for this_stimulus in stimuli: # the fisrt set of stimuli (either toys or animals)
-    this_stimulus.draw()
+
+fam_stim.draw()
 win.flip()
-audio1.play()
+
+audio_look.play()
 core.wait(stimuli_time)
-audio1.stop()
+audio_look.stop()
 print('\n\n=========================== Press SPACE to continue ===========================')
 event.waitKeys(keyList='space')
 # 
@@ -348,20 +310,31 @@ background.draw()
 closed_door.draw()
 win.flip()
 #audio2.play()
-core.wait(8)
+core.wait(2)
 #audio2.stop()
-print('\n\n=========================== Press SPACE to continue ===========================')
-event.waitKeys(keyList='space')
 
 # show backgroud for 1s
 background.draw()
-open_door.draw()
+outcome_stim.draw()
 win.flip()
-audio3.play()
-core.wait(3.5)
-audio3.stop()
+feed_music.play()
+core.wait(3)
+feed_music.stop()
 print('\n\n=========================== Press SPACE to continue ===========================')
 event.waitKeys(keyList='space')
+
+trigger = 'start_trial' + '_condition_' + str(n_stimuli) + '_object_' + str(objects_cond) + '_first_' + str(toy_first)
+
+# show 8 stimuli (either identical or different) for 3s
+background.draw()
+
+objects_stim.draw()
+win.flip()
+
+audio_look.play()
+core.wait(stimuli_time)
+audio_look.stop()
+
 
 # start showing door trials. The first trial is a familiarization trial.
 start_time = core.getTime()
@@ -439,7 +412,7 @@ while core.getTime() - start_time < max_duration:
                 feed_music.stop()
                 background.draw()
                 open_door.draw()
-                feedback.draw()
+                target_stim.draw()
                 win.flip()
                 print('\n\n=========================== Press Q to quit ===========================')
                 event.waitKeys(keyList='q')
@@ -456,10 +429,12 @@ if end_study==False:
                 closed_door.draw()
                 win.flip()
                 core.wait(wait_time_closed_door)
+                feed_music.play()
                 background.draw()
                 open_door.draw()
-                feedback.draw()
+                target_stim.draw()
                 win.flip()
+                feed_music.stop()
                 print('\n\n=========================== Press Q to quit ===========================')
                 event.waitKeys(keyList='q')
    
