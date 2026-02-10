@@ -194,7 +194,7 @@ prefs.general['audioLib'] = ['pygame']
 
 feed_music=sound.Sound(Path+"Stimuli\\sound.wav", stereo=True)
 
-audio_look=sound.Sound(Path+"Stimuli\\sound.wav", stereo=True)
+audio_look=sound.Sound(Path+"Stimuli\\look.wav", stereo=True)
 
 #Load background image and door images
 os.chdir(Path+"Stimuli")
